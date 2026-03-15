@@ -1,8 +1,9 @@
 {
-  "name": "quotation-generator-init",
+  "name": "quotation-generator",
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "bash scripts/setup-fonts.sh",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
