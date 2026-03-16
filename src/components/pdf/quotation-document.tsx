@@ -203,20 +203,6 @@ const s = StyleSheet.create({
   notesSpacer: {
     marginTop: 10,
   },
-
-  // Footer
-  footer: {
-    position: "absolute",
-    bottom: 20,
-    left: 40,
-    right: 40,
-    textAlign: "center",
-    fontSize: 7,
-    color: MUTED,
-    borderTopWidth: 1,
-    borderTopColor: BORDER,
-    paddingTop: 8,
-  },
 })
 
 interface Props {
@@ -362,19 +348,6 @@ export function QuotationDocument({ data }: Props) {
             )}
           </View>
         )}
-
-        {/* Footer */}
-        <Text style={s.footer}>
-          {[
-            company.name,
-            company.quoter,
-            company.address,
-            company.phone,
-            company.email,
-          ]
-            .filter(Boolean)
-            .join(" | ")}
-        </Text>
       </Page>
     </Document>
   )

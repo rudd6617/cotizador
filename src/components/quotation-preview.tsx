@@ -199,19 +199,6 @@ export function QuotationPreview({ data }: Props) {
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <div className="border-t border-gray-200 py-3 text-center text-xs text-gray-400">
-        {[
-          company.name,
-          company.quoter,
-          company.address,
-          company.phone,
-          company.email,
-        ]
-          .filter(Boolean)
-          .join(" | ")}
-      </div>
     </div>
   )
 }
