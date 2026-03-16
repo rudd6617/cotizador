@@ -17,6 +17,7 @@ import {
   formatNumber,
   getCurrencySymbol,
 } from "@/lib/format"
+import { COLORS } from "@/lib/design-tokens"
 
 Font.register({
   family: "Noto Sans TC",
@@ -25,18 +26,13 @@ Font.register({
 
 Font.registerHyphenationCallback((word) => [word])
 
-const ACCENT = "#1a1a2e"
-const LIGHT_BG = "#f8f9fa"
-const BORDER = "#e5e7eb"
-const MUTED = "#6b7280"
-
 const s = StyleSheet.create({
   page: {
     fontFamily: "Noto Sans TC",
     fontSize: 9,
     padding: 40,
     paddingBottom: 60,
-    color: "#111827",
+    color: COLORS.text,
   },
 
   // 1. Title block
@@ -47,12 +43,12 @@ const s = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 14,
     borderBottomWidth: 2,
-    borderBottomColor: ACCENT,
+    borderBottomColor: COLORS.accent,
   },
   title: {
     fontSize: 24,
     fontWeight: 700,
-    color: ACCENT,
+    color: COLORS.accent,
     letterSpacing: 8,
   },
   titleMeta: {
@@ -65,13 +61,13 @@ const s = StyleSheet.create({
   },
   titleMetaLabel: {
     fontSize: 8,
-    color: MUTED,
+    color: COLORS.muted,
     width: 45,
   },
   titleMetaValue: {
     fontSize: 8,
     fontWeight: 700,
-    color: "#374151",
+    color: COLORS.textMedium,
   },
 
   // 2. Two-column info
@@ -96,7 +92,7 @@ const s = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 7,
-    color: MUTED,
+    color: COLORS.muted,
     letterSpacing: 1,
     marginBottom: 6,
   },
@@ -104,23 +100,23 @@ const s = StyleSheet.create({
     fontSize: 11,
     fontWeight: 700,
     marginBottom: 3,
-    color: ACCENT,
+    color: COLORS.accent,
   },
   infoDetail: {
     fontSize: 8,
-    color: "#374151",
+    color: COLORS.textMedium,
     marginTop: 2,
   },
 
   // 3. Table
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.accent,
     padding: "7 10",
     borderRadius: 3,
   },
   tableHeaderText: {
-    color: "#ffffff",
+    color: COLORS.white,
     fontSize: 7.5,
     fontWeight: 700,
     letterSpacing: 0.3,
@@ -129,10 +125,10 @@ const s = StyleSheet.create({
     flexDirection: "row",
     padding: "7 10",
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomColor: COLORS.border,
   },
   tableRowAlt: {
-    backgroundColor: LIGHT_BG,
+    backgroundColor: COLORS.bgAlt,
   },
   colNo: { width: "6%", textAlign: "center" },
   colDesc: { width: "40%" },
@@ -157,7 +153,7 @@ const s = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 9,
-    color: MUTED,
+    color: COLORS.muted,
   },
   totalValue: {
     fontSize: 10,
@@ -167,38 +163,38 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: "9 12",
-    backgroundColor: ACCENT,
+    backgroundColor: COLORS.accent,
     borderRadius: 4,
     marginTop: 4,
   },
   totalFinalLabel: {
     fontSize: 11,
     fontWeight: 700,
-    color: "#ffffff",
+    color: COLORS.white,
   },
   totalFinalValue: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#ffffff",
+    color: COLORS.white,
   },
 
   // 5. Notes
   notesBox: {
-    backgroundColor: LIGHT_BG,
+    backgroundColor: COLORS.bgAlt,
     padding: 14,
     borderRadius: 4,
     marginTop: 8,
   },
   notesLabel: {
     fontSize: 7,
-    color: MUTED,
+    color: COLORS.muted,
     letterSpacing: 1,
     marginBottom: 6,
   },
   notesText: {
     fontSize: 8.5,
     lineHeight: 1.6,
-    color: "#374151",
+    color: COLORS.textMedium,
   },
   notesSpacer: {
     marginTop: 10,
