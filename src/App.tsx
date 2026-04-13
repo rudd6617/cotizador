@@ -62,7 +62,7 @@ export default function App() {
         </Button>
       </header>
 
-      <div className="flex h-[calc(100vh-3.5rem)] pt-14">
+      <div className="fixed inset-0 top-14 flex">
         <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
           <QuotationPreview data={quotation} />
         </div>
