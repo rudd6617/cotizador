@@ -1,4 +1,4 @@
-import type { LineItem } from "@/types/quotation"
+import type { Currency, LineItem } from "@/types/quotation"
 
 const numberFormatter = new Intl.NumberFormat("zh-TW")
 
@@ -6,7 +6,7 @@ export function formatNumber(n: number): string {
   return numberFormatter.format(n)
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: "NT$",
   USD: "$",
   EUR: "€",
@@ -14,8 +14,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   CNY: "¥",
 }
 
-export function getCurrencySymbol(currency: string): string {
-  return CURRENCY_SYMBOLS[currency] ?? currency
+export function getCurrencySymbol(currency: Currency): string {
+  return CURRENCY_SYMBOLS[currency]
 }
 
 export function calcLineAmount(item: LineItem): number {

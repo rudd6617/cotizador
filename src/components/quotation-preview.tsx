@@ -1,3 +1,4 @@
+import { memo } from "react"
 import type { Quotation } from "@/types/quotation"
 import {
   calcLineAmount,
@@ -12,7 +13,7 @@ interface Props {
   data: Quotation
 }
 
-export function QuotationPreview({ data }: Props) {
+export const QuotationPreview = memo(function QuotationPreview({ data }: Props) {
   const { company, client, meta, items, taxRate, paymentTerms, notes } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
@@ -148,14 +149,14 @@ export function QuotationPreview({ data }: Props) {
         {/* 4. Totals */}
         <div className="mb-6 flex justify-end">
           <div className="w-64">
-            <div className="flex justify-between py-1.5">
+            <div className="flex justify-between px-3 py-1.5">
               <span className="text-sm text-gray-500">小計</span>
               <span className="text-sm font-bold">
                 {sym} {formatNumber(subtotal)}
               </span>
             </div>
             {taxRate > 0 && (
-              <div className="flex justify-between py-1.5">
+              <div className="flex justify-between px-3 py-1.5">
                 <span className="text-sm text-gray-500">
                   稅金 ({(taxRate * 100).toFixed(0)}%)
                 </span>
@@ -201,4 +202,4 @@ export function QuotationPreview({ data }: Props) {
       </div>
     </div>
   )
-}
+})

@@ -16,10 +16,12 @@ export interface ClientInfo {
   email?: string
 }
 
+export type Currency = "TWD" | "USD" | "EUR" | "JPY" | "CNY"
+
 export interface QuotationMeta {
   quotationNumber: string
   date: string
-  currency: string
+  currency: Currency
 }
 
 export interface LineItem {

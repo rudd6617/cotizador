@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer"
-import path from "path"
 import type { Quotation } from "@/types/quotation"
 import {
   calcLineAmount,
@@ -21,7 +20,7 @@ import { COLORS } from "@/lib/design-tokens"
 
 Font.register({
   family: "Noto Sans TC",
-  src: path.join(process.cwd(), "public/fonts/NotoSansTC.ttf"),
+  src: "/fonts/NotoSansTC.ttf",
 })
 
 Font.registerHyphenationCallback((word) => [word])

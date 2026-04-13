@@ -35,7 +35,7 @@ IMPORTANT: 所有程式碼變更必須經過我確認後才可以執行。提出
 - 一個 commit 做一件事
 
 ## Project Context
-技術棧待定。
+See [stack.md](stack.md) for tech stack details.
 
 ## Self-Improvement
 Lessons 會透過 SessionStart hook 自動注入，不需手動讀取。
