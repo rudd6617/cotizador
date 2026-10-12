@@ -59,7 +59,9 @@ function createDraft(company: CompanyInfo, template: QuotationTemplate): Draft {
       taxRate: 0.05,
       paymentTerms: "",
       notes: "",
-      showTermsAndNotes: true,
+      showPaymentTerms: true,
+      showNotes: true,
+      showAmountInWords: true,
     },
   }
 }

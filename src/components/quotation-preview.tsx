@@ -8,7 +8,7 @@ import {
   formatNumber,
   getCurrencySymbol,
 } from "@/lib/format"
-import { bankLines } from "@/lib/templates"
+import { bankLines, visibleTermsAndNotes } from "@/lib/templates"
 
 // 數量、單位、單價、金額固定窄欄，其餘寬度給品名、規格（2:5）
 const ITEM_GRID = "grid grid-cols-[2rem_minmax(0,2fr)_minmax(0,5fr)_2.5rem_2.5rem_5.5rem_6rem] gap-x-2"
@@ -18,12 +18,13 @@ interface Props {
 }
 
 export const QuotationPreview = memo(function QuotationPreview({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
+  const { company, client, meta, items, taxRate } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
   const bank = bankLines(company)
+  const termsAndNotes = visibleTermsAndNotes(data)
 
   return (
     <div
@@ -158,9 +159,17 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
           )}
         </div>
 
-        {/* 4. Totals */}
-        <div className="mb-6 flex justify-end">
-          <div className="w-64">
+        {/* 4. Payment terms & notes (left) | Totals (right) */}
+        <div className="mb-6 flex items-start gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            {termsAndNotes.map((l) => (
+              <div key={l.label}>
+                <p className="mb-1 text-[10px] tracking-wide text-gray-500">{l.label}</p>
+                <p className="whitespace-pre-wrap text-sm text-gray-700">{l.value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="w-64 shrink-0">
             <div className="flex justify-between px-3 py-1.5">
               <span className="text-sm text-gray-500">小計</span>
               <span className="text-sm font-bold">
@@ -195,32 +204,6 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
                 {l.label}：{l.value}
               </p>
             ))}
-          </div>
-        )}
-
-        {/* 6. Notes */}
-        {showTermsAndNotes && (paymentTerms || notes) && (
-          <div className="rounded bg-gray-50 p-4">
-            {paymentTerms && (
-              <div className="mb-3">
-                <p className="mb-1 text-[10px] tracking-wide text-gray-500">
-                  付款條件
-                </p>
-                <p className="whitespace-pre-wrap text-sm text-gray-700">
-                  {paymentTerms}
-                </p>
-              </div>
-            )}
-            {notes && (
-              <div>
-                <p className="mb-1 text-[10px] tracking-wide text-gray-500">
-                  備註
-                </p>
-                <p className="whitespace-pre-wrap text-sm text-gray-700">
-                  {notes}
-                </p>
-              </div>
-            )}
           </div>
         )}
       </div>

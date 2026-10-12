@@ -1,7 +1,6 @@
 import { memo } from "react"
 import type { Quotation } from "@/types/quotation"
 import {
-  amountInWords,
   calcLineAmount,
   calcSubtotal,
   calcTax,
@@ -15,6 +14,8 @@ import {
   classicCompanyLines,
   classicMetaLines,
   type LabeledLine,
+  visibleAmountInWords,
+  visibleTermsAndNotes,
 } from "@/lib/templates"
 
 interface Props {
@@ -41,14 +42,15 @@ const SIGN_DATE = "日期：\u3000\u3000\u3000年\u3000\u3000月\u3000\u3000日"
 
 /** 傳統版型：公司在標題上方靠左、全框線表格、底部客戶簽章欄 */
 export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
+  const { company, client, meta, items, taxRate } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
-  const words = amountInWords(total, meta.currency)
+  const words = visibleAmountInWords(data)
   const companyLines = classicCompanyLines(company)
   const bank = bankLines(company)
+  const termsAndNotes = visibleTermsAndNotes(data)
 
   return (
     <div
@@ -118,8 +120,17 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
               </tr>
             )}
             <tr>
+              {/* 小計左邊：大寫金額、付款條件、備註 */}
               <td colSpan={5} rowSpan={3} className={`${cell} align-top text-[11px] text-gray-700`}>
-                {words}
+                <div className="flex flex-col gap-2">
+                  {words && <div>{words}</div>}
+                  {termsAndNotes.map((l) => (
+                    <div key={l.label}>
+                      <div className="font-medium text-gray-900">{l.label}</div>
+                      <div className="whitespace-pre-wrap">{l.value}</div>
+                    </div>
+                  ))}
+                </div>
               </td>
               <th className={`${cell} text-right font-medium whitespace-nowrap`}>小計</th>
               <td className={`${cell} text-right whitespace-nowrap`}>
@@ -141,23 +152,7 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
           </tbody>
         </table>
 
-        {/* 5. Payment terms & notes */}
-        {showTermsAndNotes && (
-          <table className="w-full border-collapse">
-            <tbody>
-              <tr>
-                <th className={`${head} w-20 align-top`}>付款條件</th>
-                <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{paymentTerms}</td>
-              </tr>
-              <tr>
-                <th className={`${head} align-top`}>備註</th>
-                <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{notes}</td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-
-        {/* 6. Bank info (left) | Client signature (right) */}
+        {/* 5. Bank info (left) | Client signature (right) */}
         <div className="mt-4 flex items-start gap-6">
           {bank.length > 0 && (
             <div className="flex-1">

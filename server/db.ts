@@ -170,9 +170,16 @@ export function getQuotation(db: DatabaseSync, number: string): QuotationRecord 
     .prepare(`SELECT status, client_id AS clientId, data FROM quotations WHERE number = ?`)
     .get(number) as { status: QuotationStatus; clientId: number; data: string } | undefined
   if (!row) return undefined
-  const parsed = JSON.parse(row.data)
-  // 舊資料缺的欄位補預設值：版型 modern、顯示付款條件與備註
-  const data = { template: "modern", showTermsAndNotes: true, ...parsed, items: parsed.items.map(upgradeItem) }
+  // 舊資料缺的欄位補預設值：版型 modern、顯示大寫金額；舊的共用開關 showTermsAndNotes 拆成兩個，沒有就都顯示
+  const { showTermsAndNotes = true, ...parsed } = JSON.parse(row.data)
+  const data = {
+    template: "modern",
+    showPaymentTerms: showTermsAndNotes,
+    showNotes: showTermsAndNotes,
+    showAmountInWords: true,
+    ...parsed,
+    items: parsed.items.map(upgradeItem),
+  }
   return { status: row.status, clientId: row.clientId, data }
 }
 

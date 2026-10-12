@@ -39,7 +39,9 @@ function parseRecord(body: QuotationRecord): QuotationRecord {
   if (!Number.isInteger(body.clientId)) fail(400, "請選擇客戶")
   if (!body.data?.meta || !Array.isArray(body.data.items)) fail(400, "報價單內容不完整")
   if (!isTemplate(body.data.template)) fail(400, "版型不正確")
-  if (typeof body.data.showTermsAndNotes !== "boolean") fail(400, "付款條件與備註的顯示設定不正確")
+  if (typeof body.data.showPaymentTerms !== "boolean") fail(400, "付款條件的顯示設定不正確")
+  if (typeof body.data.showNotes !== "boolean") fail(400, "備註的顯示設定不正確")
+  if (typeof body.data.showAmountInWords !== "boolean") fail(400, "大寫金額的顯示設定不正確")
   return body
 }
 

@@ -19,6 +19,12 @@ import {
 } from "@/components/ui/card"
 import type { Quotation, Client, ClientInfo, QuotationMeta, LineItem, Currency } from "@/types/quotation"
 
+// 付款條件、備註：各自的內容與「顯示在報價單上」開關
+const TOGGLED_TEXTS = [
+  { label: "付款條件", text: "paymentTerms", show: "showPaymentTerms" },
+  { label: "備註", text: "notes", show: "showNotes" },
+] as const
+
 interface Props {
   value: Quotation
   onChange: (q: Quotation) => void
@@ -262,15 +268,6 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
       <Card>
         <CardHeader>
           <CardTitle>付款條件與備註</CardTitle>
-          <CardAction>
-            <Label className="flex cursor-pointer items-center gap-2 text-xs font-normal">
-              <Switch
-                checked={value.showTermsAndNotes}
-                onCheckedChange={(checked) => onChange({ ...value, showTermsAndNotes: checked })}
-              />
-              顯示在報價單上
-            </Label>
-          </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -310,24 +307,34 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
               />
             </div>
           </div>
-          <div className="space-y-1">
-            <Label>付款條件</Label>
-            <Textarea
-              value={value.paymentTerms}
-              onChange={(e) =>
-                onChange({ ...value, paymentTerms: e.target.value })
-              }
-              rows={3}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>備註</Label>
-            <Textarea
-              value={value.notes}
-              onChange={(e) => onChange({ ...value, notes: e.target.value })}
-              rows={3}
-            />
-          </div>
+          {value.template === "classic" && (
+            <Label className="flex cursor-pointer items-center gap-2 text-sm font-normal">
+              <Switch
+                checked={value.showAmountInWords}
+                onCheckedChange={(checked) => onChange({ ...value, showAmountInWords: checked })}
+              />
+              顯示大寫金額（新台幣（含稅）：…元整，僅新台幣）
+            </Label>
+          )}
+          {TOGGLED_TEXTS.map((f) => (
+            <div key={f.text} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label>{f.label}</Label>
+                <Label className="flex cursor-pointer items-center gap-2 text-xs font-normal">
+                  <Switch
+                    checked={value[f.show]}
+                    onCheckedChange={(checked) => onChange({ ...value, [f.show]: checked })}
+                  />
+                  顯示在報價單上
+                </Label>
+              </div>
+              <Textarea
+                value={value[f.text]}
+                onChange={(e) => onChange({ ...value, [f.text]: e.target.value })}
+                rows={3}
+              />
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

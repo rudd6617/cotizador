@@ -16,7 +16,7 @@ import {
   getCurrencySymbol,
 } from "@/lib/format"
 import { COLORS } from "@/lib/design-tokens"
-import { bankLines } from "@/lib/templates"
+import { bankLines, visibleTermsAndNotes } from "@/lib/templates"
 import "./fonts"
 
 const s = StyleSheet.create({
@@ -133,9 +133,15 @@ const s = StyleSheet.create({
 
   // 4. Totals
   totalsWrap: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 20,
     marginTop: 12,
     marginBottom: 20,
+  },
+  termsCol: {
+    flex: 1,
+    gap: 10,
   },
   totalsBlock: {
     width: "40%",
@@ -190,9 +196,6 @@ const s = StyleSheet.create({
     lineHeight: 1.6,
     color: COLORS.textMedium,
   },
-  notesSpacer: {
-    marginTop: 10,
-  },
 })
 
 interface Props {
@@ -200,12 +203,13 @@ interface Props {
 }
 
 export function QuotationDocument({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
+  const { company, client, meta, items, taxRate } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
   const bank = bankLines(company)
+  const termsAndNotes = visibleTermsAndNotes(data)
 
   return (
     <Document>
@@ -298,8 +302,16 @@ export function QuotationDocument({ data }: Props) {
           ))}
         </View>
 
-        {/* 4. Totals */}
+        {/* 4. Payment terms & notes (left) | Totals (right) */}
         <View style={s.totalsWrap}>
+          <View style={s.termsCol}>
+            {termsAndNotes.map((l) => (
+              <View key={l.label}>
+                <Text style={s.notesLabel}>{l.label}</Text>
+                <Text style={s.notesText}>{l.value}</Text>
+              </View>
+            ))}
+          </View>
           <View style={s.totalsBlock}>
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>小計</Text>
@@ -335,25 +347,6 @@ export function QuotationDocument({ data }: Props) {
                 {l.label}：{l.value}
               </Text>
             ))}
-          </View>
-        )}
-
-        {/* 6. Notes */}
-        {showTermsAndNotes && (paymentTerms || notes) && (
-          <View style={s.notesBox}>
-            {paymentTerms && (
-              <View>
-                <Text style={s.notesLabel}>付款條件</Text>
-                <Text style={s.notesText}>{paymentTerms}</Text>
-              </View>
-            )}
-            {paymentTerms && notes && <View style={s.notesSpacer} />}
-            {notes && (
-              <View>
-                <Text style={s.notesLabel}>備註</Text>
-                <Text style={s.notesText}>{notes}</Text>
-              </View>
-            )}
           </View>
         )}
       </Page>

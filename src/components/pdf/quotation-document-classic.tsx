@@ -1,7 +1,6 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer"
 import type { Quotation } from "@/types/quotation"
 import {
-  amountInWords,
   calcLineAmount,
   calcSubtotal,
   calcTax,
@@ -16,6 +15,8 @@ import {
   classicCompanyLines,
   classicMetaLines,
   type LabeledLine,
+  visibleAmountInWords,
+  visibleTermsAndNotes,
 } from "@/lib/templates"
 import "./fonts"
 
@@ -53,7 +54,8 @@ const s = StyleSheet.create({
   right: { textAlign: "right" },
   bold: { fontWeight: 700 },
   muted: { color: COLORS.textMedium, fontSize: 8 },
-  tall: { minHeight: 27 },
+  termsCell: { gap: 6 },
+  termsLabel: { color: COLORS.text, fontWeight: 700 },
 
   closingRow: { flexDirection: "row", alignItems: "flex-start", gap: 18, marginTop: 12 },
   bankTable: { flexGrow: 1 },
@@ -65,7 +67,6 @@ const s = StyleSheet.create({
 const COL = { no: "6%", name: "17%", spec: "36%", qty: "7%", unit: "7%", price: "13%", amount: "14%", words: "73%" }
 // 小計區右半 = 單價 + 金額欄（27%），內部依 13:14 分
 const TOTALS = { block: "27%", label: "48.1%", value: "51.9%" }
-const INFO_LABEL = "15%"
 
 // 全形空白留給客戶手寫年月日
 const SIGN_DATE = "日期：\u3000\u3000\u3000年\u3000\u3000月\u3000\u3000日"
@@ -97,14 +98,15 @@ interface Props {
 }
 
 export function QuotationDocumentClassic({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
+  const { company, client, meta, items, taxRate } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
-  const words = amountInWords(total, meta.currency)
+  const words = visibleAmountInWords(data)
   const companyLines = classicCompanyLines(company)
   const bank = bankLines(company)
+  const termsAndNotes = visibleTermsAndNotes(data)
 
   return (
     <Document>
@@ -157,7 +159,16 @@ export function QuotationDocumentClassic({ data }: Props) {
             </View>
           ))}
           <View style={s.row} wrap={false}>
-            <Cell width={COL.words} style={[s.muted]}>{words}</Cell>
+            {/* 小計左邊：大寫金額、付款條件、備註 */}
+            <View style={[s.cell, s.muted, s.termsCell, { width: COL.words }]}>
+              {words && <Text>{words}</Text>}
+              {termsAndNotes.map((l) => (
+                <View key={l.label}>
+                  <Text style={s.termsLabel}>{l.label}</Text>
+                  <Text>{l.value}</Text>
+                </View>
+              ))}
+            </View>
             <View style={{ width: TOTALS.block }}>
               <View style={s.row}>
                 <Cell width={TOTALS.label} style={[s.right]}>小計</Cell>
@@ -175,21 +186,7 @@ export function QuotationDocumentClassic({ data }: Props) {
           </View>
         </View>
 
-        {/* 5. Payment terms & notes */}
-        {showTermsAndNotes && (
-          <View style={s.table} wrap={false}>
-            <View style={s.row}>
-              <Cell width={INFO_LABEL} style={[s.head]}>付款條件</Cell>
-              <Cell width="85%" style={[s.tall]}>{paymentTerms}</Cell>
-            </View>
-            <View style={s.row}>
-              <Cell width={INFO_LABEL} style={[s.head]}>備註</Cell>
-              <Cell width="85%" style={[s.tall]}>{notes}</Cell>
-            </View>
-          </View>
-        )}
-
-        {/* 6. Bank info (left) | Client signature (right) */}
+        {/* 5. Bank info (left) | Client signature (right) */}
         <View style={s.closingRow} wrap={false}>
           {bank.length > 0 && (
             <View style={[s.table, s.bankTable]}>

@@ -42,7 +42,9 @@ function quotationData(client: ClientInfo): Quotation {
     taxRate: 0.05,
     paymentTerms: "",
     notes: "",
-    showTermsAndNotes: true,
+    showPaymentTerms: true,
+    showNotes: true,
+    showAmountInWords: true,
   }
 }
 
@@ -225,23 +227,42 @@ test("舊報價單的品項說明讀出為品名，規格留空", async () => {
   assert.deepEqual(saved.data.items, [{ id: "1", name: "舊說明", spec: "", quantity: 1, unit: "式", unitPrice: 100 }])
 })
 
-test("舊報價單沒有顯示開關時，預設顯示付款條件與備註", async () => {
+/** 寫入舊格式的報價單：拿掉兩個分開的開關，必要時放回舊的共用開關 */
+function insertLegacyToggles(db: DatabaseSync, clientId: number, number: string, combined?: boolean) {
+  const rest: Partial<Quotation> = quotationData(CLIENT)
+  delete rest.showPaymentTerms
+  delete rest.showNotes
+  const data = combined === undefined ? rest : { ...rest, showTermsAndNotes: combined }
+  insertQuotation(db, number, { status: "sent", clientId, data: data as unknown as Quotation }, "2026-01-01T00:00:00Z")
+}
+
+test("舊報價單沒有任何顯示開關時，付款條件與備註都顯示", async () => {
   const { call, db } = setup()
   const clientId = await createClient(call)
-  const legacy: Partial<Quotation> = quotationData(CLIENT)
-  delete legacy.showTermsAndNotes
-  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+  insertLegacyToggles(db, clientId, "QT-OLD")
 
-  const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
-  assert.equal(saved.data.showTermsAndNotes, true)
+  const { data } = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
+  assert.deepEqual([data.showPaymentTerms, data.showNotes], [true, true])
+})
+
+test("舊報價單的共用開關拆成兩個開關，沿用原本的值", async () => {
+  const { call, db } = setup()
+  const clientId = await createClient(call)
+  insertLegacyToggles(db, clientId, "QT-OFF", false)
+
+  const { data } = (await (await call("GET", "/quotations/QT-OFF")).json()) as QuotationRecord
+  assert.deepEqual([data.showPaymentTerms, data.showNotes], [false, false])
+  assert.equal("showTermsAndNotes" in data, false)
 })
 
 test("顯示開關不是布林值時拒收", async () => {
   const { call } = setup()
   const clientId = await createClient(call)
-  const bad = record(clientId)
-  ;(bad.data as { showTermsAndNotes: unknown }).showTermsAndNotes = "yes"
-  assert.equal((await call("POST", "/quotations", bad)).status, 400)
+  for (const key of ["showPaymentTerms", "showNotes", "showAmountInWords"]) {
+    const bad = record(clientId)
+    ;(bad.data as unknown as Record<string, unknown>)[key] = "yes"
+    assert.equal((await call("POST", "/quotations", bad)).status, 400, key)
+  }
 })
 
 test("客戶統編可存取", async () => {
@@ -267,4 +288,15 @@ test("舊資料庫的客戶表沒有統編欄位時，開啟時自動補上，�
     clients.map((c) => [c.company, c.taxId]),
     [["新客戶", "12345678"], ["舊客戶", null]],
   )
+})
+
+test("舊報價單沒有大寫金額開關時，預設顯示", async () => {
+  const { call, db } = setup()
+  const clientId = await createClient(call)
+  const legacy: Partial<Quotation> = quotationData(CLIENT)
+  delete legacy.showAmountInWords
+  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+
+  const { data } = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
+  assert.equal(data.showAmountInWords, true)
 })
