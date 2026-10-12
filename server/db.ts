@@ -157,9 +157,9 @@ export function getQuotation(db: DatabaseSync, number: string): QuotationRecord 
     .prepare(`SELECT status, client_id AS clientId, data FROM quotations WHERE number = ?`)
     .get(number) as { status: QuotationStatus; clientId: number; data: string } | undefined
   if (!row) return undefined
-  // 版型功能之前存的單沒有 template，一律視為 modern
   const parsed = JSON.parse(row.data)
-  const data = { template: "modern", ...parsed, items: parsed.items.map(upgradeItem) }
+  // 舊資料缺的欄位補預設值：版型 modern、顯示付款條件與備註
+  const data = { template: "modern", showTermsAndNotes: true, ...parsed, items: parsed.items.map(upgradeItem) }
   return { status: row.status, clientId: row.clientId, data }
 }
 

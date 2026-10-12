@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const QuotationPreview = memo(function QuotationPreview({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes } = data
+  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
@@ -128,7 +128,7 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
                 {i + 1}
               </div>
               <div className="col-span-3">{item.name}</div>
-              <div className="col-span-2 text-gray-600">{item.spec}</div>
+              <div className="col-span-2 whitespace-pre-wrap text-gray-600">{item.spec}</div>
               <div className="col-span-1 text-right">
                 {formatNumber(item.quantity)}
               </div>
@@ -177,7 +177,7 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
         </div>
 
         {/* 5. Notes */}
-        {(paymentTerms || notes) && (
+        {showTermsAndNotes && (paymentTerms || notes) && (
           <div className="rounded bg-gray-50 p-4">
             {paymentTerms && (
               <div className="mb-3">

@@ -30,6 +30,7 @@ function quotationData(client: ClientInfo): Quotation {
     taxRate: 0.05,
     paymentTerms: "",
     notes: "",
+    showTermsAndNotes: true,
   }
 }
 
@@ -210,4 +211,23 @@ test("舊報價單的品項說明讀出為品名，規格留空", async () => {
 
   const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
   assert.deepEqual(saved.data.items, [{ id: "1", name: "舊說明", spec: "", quantity: 1, unit: "式", unitPrice: 100 }])
+})
+
+test("舊報價單沒有顯示開關時，預設顯示付款條件與備註", async () => {
+  const { call, db } = setup()
+  const clientId = await createClient(call)
+  const legacy: Partial<Quotation> = quotationData(CLIENT)
+  delete legacy.showTermsAndNotes
+  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+
+  const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
+  assert.equal(saved.data.showTermsAndNotes, true)
+})
+
+test("顯示開關不是布林值時拒收", async () => {
+  const { call } = setup()
+  const clientId = await createClient(call)
+  const bad = record(clientId)
+  ;(bad.data as { showTermsAndNotes: unknown }).showTermsAndNotes = "yes"
+  assert.equal((await call("POST", "/quotations", bad)).status, 400)
 })

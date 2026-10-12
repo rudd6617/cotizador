@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -179,21 +180,20 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
           )}
           {value.items.map((item, index) => (
             <div key={item.id} className="space-y-2 border-b border-gray-100 pb-3 last:border-0">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  {index === 0 && <Label className="text-xs">品名</Label>}
-                  <Input
-                    value={item.name}
-                    onChange={(e) => updateItem(item.id, "name", e.target.value)}
-                  />
-                </div>
-                <div>
-                  {index === 0 && <Label className="text-xs">規格</Label>}
-                  <Input
-                    value={item.spec}
-                    onChange={(e) => updateItem(item.id, "spec", e.target.value)}
-                  />
-                </div>
+              <div>
+                {index === 0 && <Label className="text-xs">品名</Label>}
+                <Input
+                  value={item.name}
+                  onChange={(e) => updateItem(item.id, "name", e.target.value)}
+                />
+              </div>
+              <div>
+                {index === 0 && <Label className="text-xs">規格</Label>}
+                <Textarea
+                  rows={3}
+                  value={item.spec}
+                  onChange={(e) => updateItem(item.id, "spec", e.target.value)}
+                />
               </div>
               <div className="grid grid-cols-12 items-end gap-2">
                 <div className="col-span-3">
@@ -255,6 +255,15 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
       <Card>
         <CardHeader>
           <CardTitle>付款條件與備註</CardTitle>
+          <CardAction>
+            <Label className="flex cursor-pointer items-center gap-2 text-xs font-normal">
+              <Switch
+                checked={value.showTermsAndNotes}
+                onCheckedChange={(checked) => onChange({ ...value, showTermsAndNotes: checked })}
+              />
+              顯示在報價單上
+            </Label>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

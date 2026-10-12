@@ -199,7 +199,7 @@ interface Props {
 }
 
 export function QuotationDocument({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes } = data
+  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
@@ -322,7 +322,7 @@ export function QuotationDocument({ data }: Props) {
         </View>
 
         {/* 5. Notes */}
-        {(paymentTerms || notes) && (
+        {showTermsAndNotes && (paymentTerms || notes) && (
           <View style={s.notesBox}>
             {paymentTerms && (
               <View>

@@ -88,7 +88,7 @@ interface Props {
 }
 
 export function QuotationDocumentClassic({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes } = data
+  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
@@ -166,16 +166,18 @@ export function QuotationDocumentClassic({ data }: Props) {
         </View>
 
         {/* 5. Payment terms & notes */}
-        <View style={s.table} wrap={false}>
-          <View style={s.row}>
-            <Cell width={INFO_LABEL} style={[s.head]}>付款條件</Cell>
-            <Cell width="85%" style={[s.tall]}>{paymentTerms}</Cell>
+        {showTermsAndNotes && (
+          <View style={s.table} wrap={false}>
+            <View style={s.row}>
+              <Cell width={INFO_LABEL} style={[s.head]}>付款條件</Cell>
+              <Cell width="85%" style={[s.tall]}>{paymentTerms}</Cell>
+            </View>
+            <View style={s.row}>
+              <Cell width={INFO_LABEL} style={[s.head]}>備註</Cell>
+              <Cell width="85%" style={[s.tall]}>{notes}</Cell>
+            </View>
           </View>
-          <View style={s.row}>
-            <Cell width={INFO_LABEL} style={[s.head]}>備註</Cell>
-            <Cell width="85%" style={[s.tall]}>{notes}</Cell>
-          </View>
-        </View>
+        )}
 
         {/* 6. Client signature */}
         <View style={s.signWrap} wrap={false}>

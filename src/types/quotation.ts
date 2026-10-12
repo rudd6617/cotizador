@@ -47,6 +47,8 @@ export interface Quotation {
   taxRate: number
   paymentTerms: string
   notes: string
+  /** 報價單上是否顯示付款條件與備註 */
+  showTermsAndNotes: boolean
 }
 export const QUOTATION_STATUSES = ["draft", "sent", "won", "lost"] as const
 

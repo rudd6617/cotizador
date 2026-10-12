@@ -82,7 +82,7 @@ done
 -->
 
 **Quotation**（報價單）：
-公司對某位 Client 開出的一份報價，含品項、稅率、付款條件與備註。
+公司對某位 Client 開出的一份報價，含品項、稅率、付款條件與備註。每張單可設定付款條件與備註是否顯示在報價單上（預設顯示）。
 _Avoid_: Quote, Estimate, Offer
 
 **Quotation Number**（報價編號）：

@@ -35,7 +35,7 @@ const SIGN_DATE = "日期：\u3000\u3000\u3000年\u3000\u3000月\u3000\u3000日"
 
 /** 傳統版型：公司在標題上方靠左、全框線表格、底部客戶簽章欄 */
 export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ data }: Props) {
-  const { company, client, meta, items, taxRate, paymentTerms, notes } = data
+  const { company, client, meta, items, taxRate, paymentTerms, notes, showTermsAndNotes } = data
   const subtotal = calcSubtotal(items)
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
@@ -92,7 +92,7 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
               <tr key={item.id}>
                 <td className={`${cell} text-center`}>{i + 1}</td>
                 <td className={cell}>{item.name}</td>
-                <td className={cell}>{item.spec}</td>
+                <td className={`${cell} whitespace-pre-wrap`}>{item.spec}</td>
                 <td className={`${cell} text-right`}>{formatNumber(item.quantity)}</td>
                 <td className={`${cell} text-center`}>{item.unit}</td>
                 <td className={`${cell} text-right`}>
@@ -135,18 +135,20 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
         </table>
 
         {/* 5. Payment terms & notes */}
-        <table className="w-full border-collapse">
-          <tbody>
-            <tr>
-              <th className={`${head} w-20 align-top`}>付款條件</th>
-              <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{paymentTerms}</td>
-            </tr>
-            <tr>
-              <th className={`${head} align-top`}>備註</th>
-              <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{notes}</td>
-            </tr>
-          </tbody>
-        </table>
+        {showTermsAndNotes && (
+          <table className="w-full border-collapse">
+            <tbody>
+              <tr>
+                <th className={`${head} w-20 align-top`}>付款條件</th>
+                <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{paymentTerms}</td>
+              </tr>
+              <tr>
+                <th className={`${head} align-top`}>備註</th>
+                <td className={`${cell} h-9 align-top whitespace-pre-wrap`}>{notes}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
 
         {/* 6. Client signature */}
         <div className="mt-4 flex justify-end">
