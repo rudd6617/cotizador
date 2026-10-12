@@ -12,10 +12,11 @@ interface Editing {
   info: ClientInfo
 }
 
-const EMPTY_CLIENT: ClientInfo = { company: "", contactPerson: "", address: "", phone: "", email: "" }
+const EMPTY_CLIENT: ClientInfo = { company: "", taxId: "", contactPerson: "", address: "", phone: "", email: "" }
 
 const FIELDS: { key: keyof ClientInfo; label: string; required?: boolean }[] = [
   { key: "company", label: "公司名稱", required: true },
+  { key: "taxId", label: "統一編號" },
   { key: "contactPerson", label: "聯絡人" },
   { key: "phone", label: "電話" },
   { key: "email", label: "Email" },
@@ -119,6 +120,7 @@ export function ClientList() {
           <thead className="bg-gray-50 text-left text-gray-600">
             <tr>
               <th className="px-4 py-3 font-medium">公司名稱</th>
+              <th className="px-4 py-3 font-medium">統一編號</th>
               <th className="px-4 py-3 font-medium">聯絡人</th>
               <th className="px-4 py-3 font-medium">電話</th>
               <th className="px-4 py-3 font-medium">地址</th>
@@ -129,7 +131,7 @@ export function ClientList() {
           <tbody>
             {visible?.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                   {keyword ? "沒有符合條件的客戶" : "還沒有客戶，點「＋ 新增客戶」開始"}
                 </td>
               </tr>
@@ -137,6 +139,7 @@ export function ClientList() {
             {visible?.map((c) => (
               <tr key={c.id} className="border-t border-gray-200">
                 <td className="px-4 py-3.5 font-medium">{c.company}</td>
+                <td className="px-4 py-3.5 text-gray-600">{c.taxId}</td>
                 <td className="px-4 py-3.5">{c.contactPerson}</td>
                 <td className="px-4 py-3.5 text-gray-600">{c.phone}</td>
                 <td className="px-4 py-3.5 text-gray-600">{c.address}</td>

@@ -6,10 +6,16 @@ export interface CompanyInfo {
   email: string
   logo?: string
   taxId?: string
+  /** 匯款資料；舊報價單的公司快照沒有這些欄位 */
+  bankName?: string
+  bankBranch?: string
+  bankAccountName?: string
+  bankAccountNumber?: string
 }
 
 export interface ClientInfo {
   company: string
+  taxId?: string
   contactPerson?: string
   address: string
   phone?: string

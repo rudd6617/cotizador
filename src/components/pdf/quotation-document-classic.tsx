@@ -10,7 +10,13 @@ import {
   getCurrencySymbol,
 } from "@/lib/format"
 import { COLORS } from "@/lib/design-tokens"
-import { classicClientLines, classicCompanyLines, classicMetaLines, type LabeledLine } from "@/lib/templates"
+import {
+  bankLines,
+  classicClientLines,
+  classicCompanyLines,
+  classicMetaLines,
+  type LabeledLine,
+} from "@/lib/templates"
 import "./fonts"
 
 const LINE = "#111827"
@@ -49,13 +55,16 @@ const s = StyleSheet.create({
   muted: { color: COLORS.textMedium, fontSize: 8 },
   tall: { minHeight: 27 },
 
-  signWrap: { alignItems: "flex-end", marginTop: 12 },
-  signTable: { width: 216 },
+  closingRow: { flexDirection: "row", alignItems: "flex-start", gap: 18, marginTop: 12 },
+  bankTable: { flexGrow: 1 },
+  signTable: { width: 216, marginLeft: "auto" },
   signBox: { height: 72 },
 })
 
 // 品項表欄寬；金額小計區的左格 = 前五欄合計
-const COL = { no: "7%", name: "25%", spec: "16%", qty: "8%", unit: "8%", price: "17%", amount: "19%", words: "64%" }
+const COL = { no: "6%", name: "17%", spec: "36%", qty: "7%", unit: "7%", price: "13%", amount: "14%", words: "73%" }
+// 小計區右半 = 單價 + 金額欄（27%），內部依 13:14 分
+const TOTALS = { block: "27%", label: "48.1%", value: "51.9%" }
 const INFO_LABEL = "15%"
 
 // 全形空白留給客戶手寫年月日
@@ -95,6 +104,7 @@ export function QuotationDocumentClassic({ data }: Props) {
   const sym = getCurrencySymbol(meta.currency)
   const words = amountInWords(total, meta.currency)
   const companyLines = classicCompanyLines(company)
+  const bank = bankLines(company)
 
   return (
     <Document>
@@ -148,18 +158,18 @@ export function QuotationDocumentClassic({ data }: Props) {
           ))}
           <View style={s.row} wrap={false}>
             <Cell width={COL.words} style={[s.muted]}>{words}</Cell>
-            <View style={{ width: "36%" }}>
+            <View style={{ width: TOTALS.block }}>
               <View style={s.row}>
-                <Cell width="47.2%" style={[s.right]}>小計</Cell>
-                <Cell width="52.8%" style={[s.right]}>{sym} {formatNumber(subtotal)}</Cell>
+                <Cell width={TOTALS.label} style={[s.right]}>小計</Cell>
+                <Cell width={TOTALS.value} style={[s.right]}>{sym} {formatNumber(subtotal)}</Cell>
               </View>
               <View style={s.row}>
-                <Cell width="47.2%" style={[s.right]}>營業稅 {(taxRate * 100).toFixed(0)}%</Cell>
-                <Cell width="52.8%" style={[s.right]}>{sym} {formatNumber(tax)}</Cell>
+                <Cell width={TOTALS.label} style={[s.right]}>營業稅 {(taxRate * 100).toFixed(0)}%</Cell>
+                <Cell width={TOTALS.value} style={[s.right]}>{sym} {formatNumber(tax)}</Cell>
               </View>
               <View style={s.row}>
-                <Cell width="47.2%" style={[s.right, s.bold]}>總計</Cell>
-                <Cell width="52.8%" style={[s.right, s.bold]}>{sym} {formatNumber(total)}</Cell>
+                <Cell width={TOTALS.label} style={[s.right, s.bold]}>總計</Cell>
+                <Cell width={TOTALS.value} style={[s.right, s.bold]}>{sym} {formatNumber(total)}</Cell>
               </View>
             </View>
           </View>
@@ -179,8 +189,20 @@ export function QuotationDocumentClassic({ data }: Props) {
           </View>
         )}
 
-        {/* 6. Client signature */}
-        <View style={s.signWrap} wrap={false}>
+        {/* 6. Bank info (left) | Client signature (right) */}
+        <View style={s.closingRow} wrap={false}>
+          {bank.length > 0 && (
+            <View style={[s.table, s.bankTable]}>
+              <View style={s.row}>
+                <Cell width="100%" style={[s.head]}>匯款資料</Cell>
+              </View>
+              <View style={s.row}>
+                <View style={[s.cell, { width: "100%" }]}>
+                  <Lines lines={bank} />
+                </View>
+              </View>
+            </View>
+          )}
           <View style={[s.table, s.signTable]}>
             <View style={s.row}>
               <Cell width="100%" style={[s.head, s.center]}>客戶確認簽章</Cell>

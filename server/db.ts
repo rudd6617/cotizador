@@ -15,6 +15,7 @@ const SCHEMA = `
 CREATE TABLE IF NOT EXISTS clients (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   company TEXT NOT NULL,
+  tax_id TEXT,
   contact_person TEXT,
   address TEXT NOT NULL,
   phone TEXT,
@@ -45,10 +46,22 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `
 
+/** 建表之後才加的欄位；舊資料庫開啟時補上（可重複執行） */
+const ADDED_COLUMNS = [{ table: "clients", column: "tax_id", type: "TEXT" }]
+
+export function migrate(db: DatabaseSync): void {
+  db.exec(SCHEMA)
+  for (const { table, column, type } of ADDED_COLUMNS) {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+    if (columns.some((c) => c.name === column)) continue
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
+  }
+}
+
 export function openDb(path: string): DatabaseSync {
   const db = new DatabaseSync(path)
   db.exec("PRAGMA foreign_keys = ON")
-  db.exec(SCHEMA)
+  migrate(db)
   return db
 }
 
@@ -80,7 +93,7 @@ export function saveSettings(db: DatabaseSync, s: AppSettings): void {
 
 // ---- clients ----
 
-const CLIENT_COLUMNS = `id, company, contact_person AS contactPerson, address, phone, email`
+const CLIENT_COLUMNS = `id, company, tax_id AS taxId, contact_person AS contactPerson, address, phone, email`
 
 export function listClients(db: DatabaseSync): ClientWithCount[] {
   return db
@@ -95,18 +108,18 @@ export function listClients(db: DatabaseSync): ClientWithCount[] {
 export function insertClient(db: DatabaseSync, c: ClientInfo): number {
   const result = db
     .prepare(
-      `INSERT INTO clients (company, contact_person, address, phone, email) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO clients (company, tax_id, contact_person, address, phone, email) VALUES (?, ?, ?, ?, ?, ?)`,
     )
-    .run(c.company, c.contactPerson ?? null, c.address, c.phone ?? null, c.email ?? null)
+    .run(c.company, c.taxId ?? null, c.contactPerson ?? null, c.address, c.phone ?? null, c.email ?? null)
   return Number(result.lastInsertRowid)
 }
 
 export function updateClient(db: DatabaseSync, id: number, c: ClientInfo): boolean {
   const result = db
     .prepare(
-      `UPDATE clients SET company = ?, contact_person = ?, address = ?, phone = ?, email = ? WHERE id = ?`,
+      `UPDATE clients SET company = ?, tax_id = ?, contact_person = ?, address = ?, phone = ?, email = ? WHERE id = ?`,
     )
-    .run(c.company, c.contactPerson ?? null, c.address, c.phone ?? null, c.email ?? null, id)
+    .run(c.company, c.taxId ?? null, c.contactPerson ?? null, c.address, c.phone ?? null, c.email ?? null, id)
   return result.changes > 0
 }
 

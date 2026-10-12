@@ -37,10 +37,20 @@ export function classicCompanyLines(company: CompanyInfo): LabeledLine[] {
 export function classicClientLines(client: ClientInfo): LabeledLine[] {
   return filled([
     { label: "客戶名稱", value: client.company },
+    { label: "統一編號", value: client.taxId },
     { label: "聯絡人", value: client.contactPerson },
     { label: "電話", value: client.phone },
     { label: "Email", value: client.email },
     { label: "地址", value: client.address },
+  ])
+}
+
+export function bankLines(company: CompanyInfo): LabeledLine[] {
+  return filled([
+    { label: "銀行", value: company.bankName },
+    { label: "分行", value: company.bankBranch },
+    { label: "戶名", value: company.bankAccountName },
+    { label: "帳號", value: company.bankAccountNumber },
   ])
 }
 

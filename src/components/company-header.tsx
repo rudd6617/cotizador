@@ -14,10 +14,6 @@ const NAV = [
 ] as const
 
 export function CompanyHeader({ company, active }: Props) {
-  const details = [company.taxId && `統編 ${company.taxId}`, company.address, company.phone, company.email]
-    .filter(Boolean)
-    .join(" ・ ")
-
   return (
     <header className="flex flex-wrap items-center justify-between gap-6 bg-slate-800 px-8 py-5 text-slate-50">
       <div className="flex items-center gap-4">
@@ -26,7 +22,6 @@ export function CompanyHeader({ company, active }: Props) {
           <div className="text-xl font-bold tracking-wide">
             {company.name || <a href={href.settings()} className="underline">請到「設定」填寫公司資料</a>}
           </div>
-          <div className="mt-1 text-sm text-slate-300">{details}</div>
         </div>
       </div>
       <nav aria-label="主選單" className="flex gap-2">

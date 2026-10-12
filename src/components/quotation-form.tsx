@@ -117,12 +117,19 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
               下方欄位是這張報價單自己的副本，修改不會影響客戶資料。
             </p>
           </div>
+          <div className="space-y-1">
+            <Label>客戶名稱</Label>
+            <Input
+              value={value.client.company}
+              onChange={(e) => updateClient("company", e.target.value)}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>客戶名稱</Label>
+              <Label>統一編號</Label>
               <Input
-                value={value.client.company}
-                onChange={(e) => updateClient("company", e.target.value)}
+                value={value.client.taxId ?? ""}
+                onChange={(e) => updateClient("taxId", e.target.value)}
               />
             </div>
             <div className="space-y-1">

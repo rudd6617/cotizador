@@ -9,7 +9,13 @@ import {
   formatNumber,
   getCurrencySymbol,
 } from "@/lib/format"
-import { classicClientLines, classicCompanyLines, classicMetaLines, type LabeledLine } from "@/lib/templates"
+import {
+  bankLines,
+  classicClientLines,
+  classicCompanyLines,
+  classicMetaLines,
+  type LabeledLine,
+} from "@/lib/templates"
 
 interface Props {
   data: Quotation
@@ -42,6 +48,7 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
   const sym = getCurrencySymbol(meta.currency)
   const words = amountInWords(total, meta.currency)
   const companyLines = classicCompanyLines(company)
+  const bank = bankLines(company)
 
   return (
     <div
@@ -79,12 +86,12 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
           <thead className="bg-gray-100 whitespace-nowrap">
             <tr>
               <th className={`${cell} w-10 text-center font-medium`}>項次</th>
-              <th className={`${cell} text-left font-medium`}>品名</th>
+              <th className={`${cell} w-[20%] text-left font-medium`}>品名</th>
               <th className={`${cell} text-left font-medium`}>規格</th>
-              <th className={`${cell} w-12 text-center font-medium`}>數量</th>
-              <th className={`${cell} w-11 text-center font-medium`}>單位</th>
-              <th className={`${cell} w-24 text-right font-medium`}>單價</th>
-              <th className={`${cell} w-28 text-right font-medium`}>金額</th>
+              <th className={`${cell} w-0 text-center font-medium`}>數量</th>
+              <th className={`${cell} w-0 text-center font-medium`}>單位</th>
+              <th className={`${cell} w-0 text-right font-medium`}>單價</th>
+              <th className={`${cell} w-0 text-right font-medium`}>金額</th>
             </tr>
           </thead>
           <tbody>
@@ -93,12 +100,12 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
                 <td className={`${cell} text-center`}>{i + 1}</td>
                 <td className={cell}>{item.name}</td>
                 <td className={`${cell} whitespace-pre-wrap`}>{item.spec}</td>
-                <td className={`${cell} text-right`}>{formatNumber(item.quantity)}</td>
-                <td className={`${cell} text-center`}>{item.unit}</td>
-                <td className={`${cell} text-right`}>
+                <td className={`${cell} text-right whitespace-nowrap`}>{formatNumber(item.quantity)}</td>
+                <td className={`${cell} text-center whitespace-nowrap`}>{item.unit}</td>
+                <td className={`${cell} text-right whitespace-nowrap`}>
                   {sym} {formatNumber(item.unitPrice)}
                 </td>
-                <td className={`${cell} text-right`}>
+                <td className={`${cell} text-right whitespace-nowrap`}>
                   {sym} {formatNumber(calcLineAmount(item))}
                 </td>
               </tr>
@@ -114,20 +121,20 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
               <td colSpan={5} rowSpan={3} className={`${cell} align-top text-[11px] text-gray-700`}>
                 {words}
               </td>
-              <th className={`${cell} text-right font-medium`}>小計</th>
-              <td className={`${cell} text-right`}>
+              <th className={`${cell} text-right font-medium whitespace-nowrap`}>小計</th>
+              <td className={`${cell} text-right whitespace-nowrap`}>
                 {sym} {formatNumber(subtotal)}
               </td>
             </tr>
             <tr>
-              <th className={`${cell} text-right font-medium`}>營業稅 {(taxRate * 100).toFixed(0)}%</th>
-              <td className={`${cell} text-right`}>
+              <th className={`${cell} text-right font-medium whitespace-nowrap`}>營業稅 {(taxRate * 100).toFixed(0)}%</th>
+              <td className={`${cell} text-right whitespace-nowrap`}>
                 {sym} {formatNumber(tax)}
               </td>
             </tr>
             <tr>
-              <th className={`${cell} text-right font-bold`}>總計</th>
-              <td className={`${cell} text-right font-bold`}>
+              <th className={`${cell} text-right font-bold whitespace-nowrap`}>總計</th>
+              <td className={`${cell} text-right font-bold whitespace-nowrap`}>
                 {sym} {formatNumber(total)}
               </td>
             </tr>
@@ -150,9 +157,25 @@ export const QuotationPreviewClassic = memo(function QuotationPreviewClassic({ d
           </table>
         )}
 
-        {/* 6. Client signature */}
-        <div className="mt-4 flex justify-end">
-          <table className="w-72 border-collapse">
+        {/* 6. Bank info (left) | Client signature (right) */}
+        <div className="mt-4 flex items-start gap-6">
+          {bank.length > 0 && (
+            <div className="flex-1">
+              <table className="w-full border-collapse">
+                <tbody>
+                  <tr>
+                    <th className={head}>匯款資料</th>
+                  </tr>
+                  <tr>
+                    <td className={cell}>
+                      <Lines lines={bank} />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          <table className="ml-auto w-72 border-collapse">
             <tbody>
               <tr>
                 <th className={`${cell} bg-gray-100 font-medium`}>客戶確認簽章</th>

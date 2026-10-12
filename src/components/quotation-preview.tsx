@@ -8,6 +8,10 @@ import {
   formatNumber,
   getCurrencySymbol,
 } from "@/lib/format"
+import { bankLines } from "@/lib/templates"
+
+// 數量、單位、單價、金額固定窄欄，其餘寬度給品名、規格（2:5）
+const ITEM_GRID = "grid grid-cols-[2rem_minmax(0,2fr)_minmax(0,5fr)_2.5rem_2.5rem_5.5rem_6rem] gap-x-2"
 
 interface Props {
   data: Quotation
@@ -19,6 +23,7 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
+  const bank = bankLines(company)
 
   return (
     <div
@@ -83,6 +88,11 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
             <p className="text-xs text-gray-600">
               客戶名稱：{client.company || "—"}
             </p>
+            {client.taxId && (
+              <p className="mt-0.5 text-xs text-gray-600">
+                統一編號：{client.taxId}
+              </p>
+            )}
             {client.contactPerson && (
               <p className="mt-0.5 text-xs text-gray-600">
                 聯絡人：{client.contactPerson}
@@ -108,35 +118,35 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
 
         {/* 3. Table */}
         <div className="mb-6">
-          <div className="grid grid-cols-12 rounded-t bg-slate-800 px-3 py-2 text-xs font-bold text-white">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-3">品名</div>
-            <div className="col-span-2">規格</div>
-            <div className="col-span-1 text-right">數量</div>
-            <div className="col-span-1 text-center">單位</div>
-            <div className="col-span-2 text-right">單價</div>
-            <div className="col-span-2 text-right">金額</div>
+          <div className={`${ITEM_GRID} rounded-t bg-slate-800 px-3 py-2 text-xs font-bold text-white`}>
+            <div className="text-center">#</div>
+            <div>品名</div>
+            <div>規格</div>
+            <div className="text-right">數量</div>
+            <div className="text-center">單位</div>
+            <div className="text-right">單價</div>
+            <div className="text-right">金額</div>
           </div>
           {items.map((item, i) => (
             <div
               key={item.id}
-              className={`grid grid-cols-12 border-b border-gray-200 px-3 py-2 text-sm ${
+              className={`${ITEM_GRID} border-b border-gray-200 px-3 py-2 text-sm ${
                 i % 2 === 1 ? "bg-gray-50" : ""
               }`}
             >
-              <div className="col-span-1 text-center text-gray-500">
+              <div className="text-center text-gray-500">
                 {i + 1}
               </div>
-              <div className="col-span-3">{item.name}</div>
-              <div className="col-span-2 whitespace-pre-wrap text-gray-600">{item.spec}</div>
-              <div className="col-span-1 text-right">
+              <div>{item.name}</div>
+              <div className="whitespace-pre-wrap text-gray-600">{item.spec}</div>
+              <div className="text-right">
                 {formatNumber(item.quantity)}
               </div>
-              <div className="col-span-1 text-center">{item.unit}</div>
-              <div className="col-span-2 text-right">
+              <div className="text-center">{item.unit}</div>
+              <div className="text-right">
                 {sym} {formatNumber(item.unitPrice)}
               </div>
-              <div className="col-span-2 text-right">
+              <div className="text-right">
                 {sym} {formatNumber(calcLineAmount(item))}
               </div>
             </div>
@@ -176,7 +186,19 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
           </div>
         </div>
 
-        {/* 5. Notes */}
+        {/* 5. Bank info */}
+        {bank.length > 0 && (
+          <div className="mb-4 rounded bg-gray-50 p-4">
+            <p className="mb-1 text-[10px] tracking-wide text-gray-500">匯款資料</p>
+            {bank.map((l) => (
+              <p key={l.label} className="text-sm text-gray-700">
+                {l.label}：{l.value}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* 6. Notes */}
         {showTermsAndNotes && (paymentTerms || notes) && (
           <div className="rounded bg-gray-50 p-4">
             {paymentTerms && (

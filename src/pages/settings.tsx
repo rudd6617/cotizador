@@ -17,13 +17,22 @@ interface Props {
 
 const MAX_LOGO_BYTES = 512 * 1024
 
-const FIELDS: { key: keyof Omit<CompanyInfo, "logo">; label: string }[] = [
+type TextField = { key: keyof Omit<CompanyInfo, "logo">; label: string }
+
+const FIELDS: TextField[] = [
   { key: "name", label: "公司名稱" },
   { key: "taxId", label: "統一編號" },
   { key: "phone", label: "電話" },
   { key: "email", label: "Email" },
   { key: "quoter", label: "預設報價人" },
   { key: "address", label: "地址" },
+]
+
+const BANK_FIELDS: TextField[] = [
+  { key: "bankName", label: "銀行（含代碼）" },
+  { key: "bankBranch", label: "分行" },
+  { key: "bankAccountName", label: "戶名" },
+  { key: "bankAccountNumber", label: "帳號" },
 ]
 
 export function Settings({ company, settings, onCompanySaved, onSettingsSaved }: Props) {
@@ -133,6 +142,19 @@ function CompanyCard({ company, onSaved }: { company: CompanyInfo; onSaved: (c: 
     }
   }
 
+  function renderField(f: TextField) {
+    return (
+      <div key={f.key} className={f.key === "address" ? "space-y-1 sm:col-span-2" : "space-y-1"}>
+        <Label htmlFor={`company-${f.key}`}>{f.label}</Label>
+        <Input
+          id={`company-${f.key}`}
+          value={form[f.key] ?? ""}
+          onChange={(e) => update({ [f.key]: e.target.value })}
+        />
+      </div>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -140,16 +162,7 @@ function CompanyCard({ company, onSaved }: { company: CompanyInfo; onSaved: (c: 
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2">
-          {FIELDS.map((f) => (
-            <div key={f.key} className={f.key === "address" ? "space-y-1 sm:col-span-2" : "space-y-1"}>
-              <Label htmlFor={`company-${f.key}`}>{f.label}</Label>
-              <Input
-                id={`company-${f.key}`}
-                value={form[f.key] ?? ""}
-                onChange={(e) => update({ [f.key]: e.target.value })}
-              />
-            </div>
-          ))}
+          {FIELDS.map(renderField)}
 
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="company-logo">Logo</Label>
@@ -165,6 +178,9 @@ function CompanyCard({ company, onSaved }: { company: CompanyInfo; onSaved: (c: 
               )}
             </div>
           </div>
+
+          <h3 className="mt-2 border-t border-gray-200 pt-4 text-sm font-medium sm:col-span-2">匯款資料</h3>
+          {BANK_FIELDS.map(renderField)}
 
           <p className="text-sm text-muted-foreground sm:col-span-2">
             修改後只影響之後新增的報價單；已存的報價單保留當時的公司資料。

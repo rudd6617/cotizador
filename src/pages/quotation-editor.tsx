@@ -132,6 +132,7 @@ export function QuotationEditor(props: Props) {
 
   const { clientId } = draft
   const Preview = PREVIEWS[draft.data.template]
+  const companyUpToDate = JSON.stringify(draft.data.company) === JSON.stringify(props.company)
 
   return (
     <main className="mx-auto max-w-[1440px] px-6 py-6">
@@ -179,6 +180,14 @@ export function QuotationEditor(props: Props) {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            disabled={companyUpToDate}
+            title={companyUpToDate ? "已是目前的公司資料" : "用設定頁最新的公司資料（含匯款資料）取代這張單的公司資料，存檔後生效"}
+            onClick={() => setDraft({ ...draft, data: { ...draft.data, company: props.company } })}
+          >
+            帶入目前公司資料
+          </Button>
           {number && draft.status === "draft" && (
             <Button variant="destructive" disabled={busy !== null} onClick={() => handleDelete(number)}>
               刪除

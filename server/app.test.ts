@@ -3,10 +3,22 @@ import assert from "node:assert/strict"
 import type { ClientInfo, Quotation, QuotationRecord } from "../src/types/quotation.ts"
 import { formatQuotationNumber } from "../src/lib/format.ts"
 import { createApp } from "./app.ts"
-import { insertQuotation, openDb } from "./db.ts"
+import { DatabaseSync } from "node:sqlite"
+import { insertClient, insertQuotation, listClients, migrate, openDb } from "./db.ts"
 
-const COMPANY = { name: "測試公司", quoter: "王小明", phone: "02-1234", email: "a@b.c", address: "台北市", taxId: "12345678" }
-const CLIENT: ClientInfo = { company: "客戶甲", address: "台北市一路 1 號" }
+const COMPANY = {
+  name: "測試公司",
+  quoter: "王小明",
+  phone: "02-1234",
+  email: "a@b.c",
+  address: "台北市",
+  taxId: "12345678",
+  bankName: "測試銀行 999",
+  bankBranch: "測試分行",
+  bankAccountName: "測試公司",
+  bankAccountNumber: "000-111-222",
+}
+const CLIENT: ClientInfo = { company: "客戶甲", taxId: "87654321", address: "台北市一路 1 號" }
 
 function setup() {
   const db = openDb(":memory:")
@@ -230,4 +242,29 @@ test("顯示開關不是布林值時拒收", async () => {
   const bad = record(clientId)
   ;(bad.data as { showTermsAndNotes: unknown }).showTermsAndNotes = "yes"
   assert.equal((await call("POST", "/quotations", bad)).status, 400)
+})
+
+test("客戶統編可存取", async () => {
+  const { call } = setup()
+  await createClient(call)
+  const [client] = (await (await call("GET", "/clients")).json()) as ClientInfo[]
+  assert.equal(client.taxId, "87654321")
+})
+
+test("舊資料庫的客戶表沒有統編欄位時，開啟時自動補上，既有客戶保留", () => {
+  const db = new DatabaseSync(":memory:")
+  db.exec(`CREATE TABLE clients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT NOT NULL, contact_person TEXT,
+    address TEXT NOT NULL, phone TEXT, email TEXT)`)
+  db.exec(`INSERT INTO clients (company, address) VALUES ('舊客戶', '舊地址')`)
+
+  migrate(db)
+  migrate(db) // 重複執行不出錯
+  insertClient(db, { company: "新客戶", taxId: "12345678", address: "新地址" })
+
+  const clients = listClients(db)
+  assert.deepEqual(
+    clients.map((c) => [c.company, c.taxId]),
+    [["新客戶", "12345678"], ["舊客戶", null]],
+  )
 })

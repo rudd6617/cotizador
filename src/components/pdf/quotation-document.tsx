@@ -16,6 +16,7 @@ import {
   getCurrencySymbol,
 } from "@/lib/format"
 import { COLORS } from "@/lib/design-tokens"
+import { bankLines } from "@/lib/templates"
 import "./fonts"
 
 const s = StyleSheet.create({
@@ -122,13 +123,13 @@ const s = StyleSheet.create({
   tableRowAlt: {
     backgroundColor: COLORS.bgAlt,
   },
-  colNo: { width: "6%", textAlign: "center" },
-  colName: { width: "24%" },
-  colSpec: { width: "16%", color: COLORS.textLight },
-  colQty: { width: "12%", textAlign: "right" },
-  colUnit: { width: "12%", textAlign: "center" },
-  colPrice: { width: "15%", textAlign: "right" },
-  colAmount: { width: "15%", textAlign: "right" },
+  colNo: { width: "5%", textAlign: "center" },
+  colName: { width: "20%" },
+  colSpec: { width: "35%", color: COLORS.textLight },
+  colQty: { width: "7%", textAlign: "right" },
+  colUnit: { width: "7%", textAlign: "center" },
+  colPrice: { width: "13%", textAlign: "right" },
+  colAmount: { width: "13%", textAlign: "right" },
 
   // 4. Totals
   totalsWrap: {
@@ -204,6 +205,7 @@ export function QuotationDocument({ data }: Props) {
   const tax = calcTax(subtotal, taxRate)
   const total = calcTotal(subtotal, tax)
   const sym = getCurrencySymbol(meta.currency)
+  const bank = bankLines(company)
 
   return (
     <Document>
@@ -245,6 +247,9 @@ export function QuotationDocument({ data }: Props) {
 
           <View style={s.infoCol}>
             <Text style={s.infoDetail}>客戶名稱：{client.company}</Text>
+            {client.taxId ? (
+              <Text style={s.infoDetail}>統一編號：{client.taxId}</Text>
+            ) : null}
             {client.contactPerson ? (
               <Text style={s.infoDetail}>
                 聯絡人：{client.contactPerson}
@@ -321,7 +326,19 @@ export function QuotationDocument({ data }: Props) {
           </View>
         </View>
 
-        {/* 5. Notes */}
+        {/* 5. Bank info */}
+        {bank.length > 0 && (
+          <View style={s.notesBox}>
+            <Text style={s.notesLabel}>匯款資料</Text>
+            {bank.map((l) => (
+              <Text key={l.label} style={s.notesText}>
+                {l.label}：{l.value}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {/* 6. Notes */}
         {showTermsAndNotes && (paymentTerms || notes) && (
           <View style={s.notesBox}>
             {paymentTerms && (
