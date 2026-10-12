@@ -34,11 +34,22 @@
 | 用途 | 指令 |
 |------|------|
 | 開發 | `npm run dev`（Hono API :8787 + Vite，`/api` 由 Vite proxy 轉送） |
-| 測試 | `npm test`（`node:test`，測 `server/`） |
+| 測試 | `npm test`（`node:test`，測 `server/` 與 `src/lib/`） |
 | 型別檢查 | `tsc -b && tsc -p server` |
 | Lint | `npm run lint` |
 | 建置 | `npm run build` (前端 + server 型別檢查 + vite build) |
 | 正式執行 | `npm run build && npm start`（Hono 同時提供 API 與 `dist/`） |
+
+PDF 字型（不進 git，第一次 clone 後要下載，否則 PDF 產生失敗 `Unknown font format`）：
+
+```bash
+for w in Regular Bold; do
+  curl -L -o public/fonts/NotoSansTC-$w.otf \
+    https://github.com/notofonts/noto-cjk/raw/main/Sans/SubsetOTF/TC/NotoSansTC-$w.otf
+done
+```
+
+不要用 Google Fonts 的可變字重檔 `NotoSansTC[wght].ttf`：react-pdf 只取預設字重（Thin），粗體也出不來。
 
 資料（含公司資訊）都存在 `data/cotizador.db`（SQLite，不進 git；備份＝複製檔案）。公司資訊在系統的「設定」頁修改。
 
@@ -75,12 +86,20 @@
 _Avoid_: Quote, Estimate, Offer
 
 **Quotation Number**（報價編號）：
-Quotation 第一次儲存時由後端依時間產生的唯一編號，格式 `QT-YYYYMMDD-HHmmss`，之後不可修改。
+開新報價單（新增或複製）當下依時間產生的唯一編號，格式 `QT-YYYYMMDD-HHmmss`，之後不可修改。儲存時後端檢查格式與是否重複（重複回 409）；沒存就離開不佔用編號。
 _Avoid_: 單號, ID
 
 **Quotation Status**（狀態）：
 Quotation 所處的階段，只有四種：草稿（Draft）、已送出（Sent）、成交（Won）、未成交（Lost）。任何狀態都可直接修改；只有草稿可刪除。
 _Avoid_: Stage, State
+
+**Quotation Template**（版型）：
+報價單預覽與 PDF 的版面，目前有「現代」（modern）與「傳統」（classic）兩種。每張 Quotation 各自存版型；新單預設值在「設定」頁指定。版型功能之前存的單視為現代。
+_Avoid_: 樣式, Theme, Layout
+
+**Line Item**（品項）：
+Quotation 裡的一行，含品名（name）、規格（spec）、數量、單位、單價。品名與規格分開存、報價單上分兩欄顯示。舊資料只有「說明」（description），讀取時轉成品名、規格留空。
+_Avoid_: 品項說明, Description, Product
 
 **Client**（客戶）：
 接收 Quotation 的公司，存於客戶資料。已有 Quotation 的 Client 不可刪除。

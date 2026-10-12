@@ -110,7 +110,8 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
         <div className="mb-6">
           <div className="grid grid-cols-12 rounded-t bg-slate-800 px-3 py-2 text-xs font-bold text-white">
             <div className="col-span-1 text-center">#</div>
-            <div className="col-span-5">品項說明</div>
+            <div className="col-span-3">品名</div>
+            <div className="col-span-2">規格</div>
             <div className="col-span-1 text-right">數量</div>
             <div className="col-span-1 text-center">單位</div>
             <div className="col-span-2 text-right">單價</div>
@@ -126,7 +127,8 @@ export const QuotationPreview = memo(function QuotationPreview({ data }: Props) 
               <div className="col-span-1 text-center text-gray-500">
                 {i + 1}
               </div>
-              <div className="col-span-5">{item.description}</div>
+              <div className="col-span-3">{item.name}</div>
+              <div className="col-span-2 text-gray-600">{item.spec}</div>
               <div className="col-span-1 text-right">
                 {formatNumber(item.quantity)}
               </div>

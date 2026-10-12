@@ -5,7 +5,6 @@ import {
   Text,
   Image,
   StyleSheet,
-  Font,
 } from "@react-pdf/renderer"
 import type { Quotation } from "@/types/quotation"
 import {
@@ -17,13 +16,7 @@ import {
   getCurrencySymbol,
 } from "@/lib/format"
 import { COLORS } from "@/lib/design-tokens"
-
-Font.register({
-  family: "Noto Sans TC",
-  src: "/fonts/NotoSansTC.ttf",
-})
-
-Font.registerHyphenationCallback((word) => [word])
+import "./fonts"
 
 const s = StyleSheet.create({
   page: {
@@ -130,7 +123,8 @@ const s = StyleSheet.create({
     backgroundColor: COLORS.bgAlt,
   },
   colNo: { width: "6%", textAlign: "center" },
-  colDesc: { width: "40%" },
+  colName: { width: "24%" },
+  colSpec: { width: "16%", color: COLORS.textLight },
   colQty: { width: "12%", textAlign: "right" },
   colUnit: { width: "12%", textAlign: "center" },
   colPrice: { width: "15%", textAlign: "right" },
@@ -272,7 +266,8 @@ export function QuotationDocument({ data }: Props) {
         <View>
           <View style={s.tableHeader}>
             <Text style={[s.tableHeaderText, s.colNo]}>#</Text>
-            <Text style={[s.tableHeaderText, s.colDesc]}>品項說明</Text>
+            <Text style={[s.tableHeaderText, s.colName]}>品名</Text>
+            <Text style={[s.tableHeaderText, s.colSpec]}>規格</Text>
             <Text style={[s.tableHeaderText, s.colQty]}>數量</Text>
             <Text style={[s.tableHeaderText, s.colUnit]}>單位</Text>
             <Text style={[s.tableHeaderText, s.colPrice]}>單價</Text>
@@ -284,7 +279,8 @@ export function QuotationDocument({ data }: Props) {
               style={i % 2 === 1 ? [s.tableRow, s.tableRowAlt] : s.tableRow}
             >
               <Text style={s.colNo}>{i + 1}</Text>
-              <Text style={s.colDesc}>{item.description}</Text>
+              <Text style={s.colName}>{item.name}</Text>
+              <Text style={s.colSpec}>{item.spec}</Text>
               <Text style={s.colQty}>{formatNumber(item.quantity)}</Text>
               <Text style={s.colUnit}>{item.unit}</Text>
               <Text style={s.colPrice}>

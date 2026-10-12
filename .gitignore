@@ -32,6 +32,7 @@ yarn-error.log*
 
 # fonts (downloaded at setup)
 /public/fonts/*.ttf
+/public/fonts/*.otf
 
 # local database
 /data

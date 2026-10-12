@@ -26,13 +26,20 @@ export interface QuotationMeta {
 
 export interface LineItem {
   id: string
-  description: string
+  name: string
+  spec: string
   quantity: number
   unit: string
   unitPrice: number
 }
 
+export const QUOTATION_TEMPLATES = ["modern", "classic"] as const
+
+/** 報價單版型；每張單各自存（同客戶快照的理由，ADR-0001） */
+export type QuotationTemplate = (typeof QUOTATION_TEMPLATES)[number]
+
 export interface Quotation {
+  template: QuotationTemplate
   company: CompanyInfo
   client: ClientInfo
   meta: QuotationMeta
@@ -68,4 +75,9 @@ export interface QuotationSummary {
   date: string
   currency: Currency
   total: number
+}
+
+/** 系統設定（不進報價單快照） */
+export interface AppSettings {
+  defaultTemplate: QuotationTemplate
 }

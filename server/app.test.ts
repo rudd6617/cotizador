@@ -1,30 +1,32 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import type { ClientInfo, Quotation, QuotationRecord } from "../src/types/quotation.ts"
-import { createApp, formatQuotationNumber } from "./app.ts"
-import { openDb } from "./db.ts"
+import { formatQuotationNumber } from "../src/lib/format.ts"
+import { createApp } from "./app.ts"
+import { insertQuotation, openDb } from "./db.ts"
 
 const COMPANY = { name: "測試公司", quoter: "王小明", phone: "02-1234", email: "a@b.c", address: "台北市", taxId: "12345678" }
 const CLIENT: ClientInfo = { company: "客戶甲", address: "台北市一路 1 號" }
 
-function setup(now = new Date(2026, 9, 12, 14, 30, 52)) {
-  let current = now
-  const app = createApp({ db: openDb(":memory:"), now: () => current })
+function setup() {
+  const db = openDb(":memory:")
+  const app = createApp({ db, now: () => new Date(2026, 9, 12, 14, 30, 52) })
   const call = (method: string, path: string, body?: unknown) =>
     app.request(`/api${path}`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
-  return { call, setNow: (d: Date) => (current = d) }
+  return { call, db }
 }
 
 function quotationData(client: ClientInfo): Quotation {
   return {
+    template: "modern",
     company: COMPANY,
     client,
     meta: { quotationNumber: "", date: "2026-10-12", currency: "TWD" },
-    items: [{ id: "1", description: "設計", quantity: 2, unit: "式", unitPrice: 1000 }],
+    items: [{ id: "1", name: "設計", spec: "A4 雙面", quantity: 2, unit: "式", unitPrice: 1000 }],
     taxRate: 0.05,
     paymentTerms: "",
     notes: "",
@@ -36,24 +38,33 @@ async function createClient(call: ReturnType<typeof setup>["call"]) {
   return ((await res.json()) as { id: number }).id
 }
 
-function record(clientId: number, status: QuotationRecord["status"] = "draft"): QuotationRecord {
-  return { status, clientId, data: quotationData(CLIENT) }
+const NUMBER = "QT-20261012-143052"
+
+function record(clientId: number, status: QuotationRecord["status"] = "draft", number = NUMBER): QuotationRecord {
+  const data = quotationData(CLIENT)
+  return { status, clientId, data: { ...data, meta: { ...data.meta, quotationNumber: number } } }
 }
 
 test("報價編號格式為 QT-YYYYMMDD-HHmmss（本地時間）", () => {
   assert.equal(formatQuotationNumber(new Date(2026, 0, 5, 9, 8, 7)), "QT-20260105-090807")
 })
 
-test("新增報價單時由後端給編號，並寫進 data.meta", async () => {
+test("新增報價單沿用開單當下產生的編號", async () => {
   const { call } = setup()
   const clientId = await createClient(call)
-  const res = await call("POST", "/quotations", record(clientId))
+  const res = await call("POST", "/quotations", record(clientId, "draft", "QT-20261012-090000"))
   assert.equal(res.status, 201)
-  const saved = (await res.json()) as QuotationRecord
-  assert.equal(saved.data.meta.quotationNumber, "QT-20261012-143052")
+  assert.equal((await call("GET", "/quotations/QT-20261012-090000")).status, 200)
 })
 
-test("同一秒存第二張單，回 409，不覆蓋第一張", async () => {
+test("編號格式不正確或沒給時拒收", async () => {
+  const { call } = setup()
+  const clientId = await createClient(call)
+  assert.equal((await call("POST", "/quotations", record(clientId, "draft", "QT-FAKE"))).status, 400)
+  assert.equal((await call("POST", "/quotations", record(clientId, "draft", ""))).status, 400)
+})
+
+test("編號重複時回 409，不覆蓋第一張", async () => {
   const { call } = setup()
   const clientId = await createClient(call)
   await call("POST", "/quotations", record(clientId))
@@ -64,11 +75,10 @@ test("同一秒存第二張單，回 409，不覆蓋第一張", async () => {
 })
 
 test("只有草稿可以刪除", async () => {
-  const { call, setNow } = setup()
+  const { call } = setup()
   const clientId = await createClient(call)
   await call("POST", "/quotations", record(clientId, "sent"))
-  setNow(new Date(2026, 9, 12, 15, 0, 0))
-  await call("POST", "/quotations", record(clientId, "draft"))
+  await call("POST", "/quotations", record(clientId, "draft", "QT-20261012-150000"))
 
   assert.equal((await call("DELETE", "/quotations/QT-20261012-143052")).status, 409)
   assert.equal((await call("DELETE", "/quotations/QT-20261012-150000")).status, 204)
@@ -109,11 +119,10 @@ test("修改報價單不能改掉編號", async () => {
 })
 
 test("列表可依關鍵字與狀態篩選，並算出含稅總計", async () => {
-  const { call, setNow } = setup()
+  const { call } = setup()
   const clientId = await createClient(call)
   await call("POST", "/quotations", record(clientId, "draft"))
-  setNow(new Date(2026, 9, 13, 10, 0, 0))
-  await call("POST", "/quotations", record(clientId, "won"))
+  await call("POST", "/quotations", record(clientId, "won", "QT-20261013-100000"))
 
   const won = (await (await call("GET", "/quotations?status=won")).json()) as { number: string; total: number }[]
   assert.deepEqual(won.map((q) => q.number), ["QT-20261013-100000"])
@@ -158,4 +167,47 @@ test("公司資料缺必要欄位時拒收", async () => {
   const { call } = setup()
   const res = await call("PUT", "/company", { name: "測試公司" })
   assert.equal(res.status, 400)
+})
+
+test("版型不正確時拒收", async () => {
+  const { call } = setup()
+  const clientId = await createClient(call)
+  const bad = record(clientId)
+  ;(bad.data as { template: string }).template = "fancy"
+  assert.equal((await call("POST", "/quotations", bad)).status, 400)
+})
+
+test("舊報價單沒有版型欄位時，讀出為 modern", async () => {
+  const { call, db } = setup()
+  const clientId = await createClient(call)
+  const legacy: Partial<Quotation> = quotationData(CLIENT)
+  delete legacy.template
+  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+
+  const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
+  assert.equal(saved.data.template, "modern")
+})
+
+test("系統設定預設版型為 modern，可修改", async () => {
+  const { call } = setup()
+  assert.deepEqual(await (await call("GET", "/settings")).json(), { defaultTemplate: "modern" })
+  assert.equal((await call("PUT", "/settings", { defaultTemplate: "classic" })).status, 200)
+  assert.deepEqual(await (await call("GET", "/settings")).json(), { defaultTemplate: "classic" })
+})
+
+test("系統設定的版型不正確時拒收", async () => {
+  const { call } = setup()
+  assert.equal((await call("PUT", "/settings", { defaultTemplate: "fancy" })).status, 400)
+})
+
+test("舊報價單的品項說明讀出為品名，規格留空", async () => {
+  const { call, db } = setup()
+  const clientId = await createClient(call)
+  const legacy = quotationData(CLIENT)
+  const legacyItems = [{ id: "1", description: "舊說明", quantity: 1, unit: "式", unitPrice: 100 }]
+  const data = { ...legacy, items: legacyItems } as unknown as Quotation
+  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data }, "2026-01-01T00:00:00Z")
+
+  const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
+  assert.deepEqual(saved.data.items, [{ id: "1", name: "舊說明", spec: "", quantity: 1, unit: "式", unitPrice: 100 }])
 })

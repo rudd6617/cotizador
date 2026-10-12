@@ -41,7 +41,8 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
   function addItem() {
     const item: LineItem = {
       id: crypto.randomUUID(),
-      description: "",
+      name: "",
+      spec: "",
       quantity: 1,
       unit: "式",
       unitPrice: 0,
@@ -72,7 +73,7 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>報價編號</Label>
-          <Input value={value.meta.quotationNumber} placeholder="儲存後自動產生" readOnly disabled />
+          <Input value={value.meta.quotationNumber} readOnly disabled />
         </div>
         <div className="space-y-1">
           <Label>報價日期</Label>
@@ -177,70 +178,73 @@ export function QuotationForm({ value, onChange, clients, clientId, onSelectClie
             </p>
           )}
           {value.items.map((item, index) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-12 items-end gap-2"
-            >
-              <div className="col-span-5">
-                {index === 0 && (
-                  <Label className="text-xs">品項說明</Label>
-                )}
-                <Input
-                  value={item.description}
-                  onChange={(e) =>
-                    updateItem(item.id, "description", e.target.value)
-                  }
-
-                />
+            <div key={item.id} className="space-y-2 border-b border-gray-100 pb-3 last:border-0">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  {index === 0 && <Label className="text-xs">品名</Label>}
+                  <Input
+                    value={item.name}
+                    onChange={(e) => updateItem(item.id, "name", e.target.value)}
+                  />
+                </div>
+                <div>
+                  {index === 0 && <Label className="text-xs">規格</Label>}
+                  <Input
+                    value={item.spec}
+                    onChange={(e) => updateItem(item.id, "spec", e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="col-span-2">
-                {index === 0 && <Label className="text-xs">數量</Label>}
-                <Input
-                  type="number"
-                  min={0}
-                  value={item.quantity}
-                  onChange={(e) =>
-                    updateItem(
-                      item.id,
-                      "quantity",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                />
-              </div>
-              <div className="col-span-1">
-                {index === 0 && <Label className="text-xs">單位</Label>}
-                <Input
-                  value={item.unit}
-                  onChange={(e) =>
-                    updateItem(item.id, "unit", e.target.value)
-                  }
-                />
-              </div>
-              <div className="col-span-3">
-                {index === 0 && <Label className="text-xs">單價</Label>}
-                <Input
-                  type="number"
-                  min={0}
-                  value={item.unitPrice}
-                  onChange={(e) =>
-                    updateItem(
-                      item.id,
-                      "unitPrice",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                />
-              </div>
-              <div className="col-span-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeItem(item.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  ✕
-                </Button>
+              <div className="grid grid-cols-12 items-end gap-2">
+                <div className="col-span-3">
+                  {index === 0 && <Label className="text-xs">數量</Label>}
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.quantity}
+                    onChange={(e) =>
+                      updateItem(
+                        item.id,
+                        "quantity",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
+                  />
+                </div>
+                <div className="col-span-3">
+                  {index === 0 && <Label className="text-xs">單位</Label>}
+                  <Input
+                    value={item.unit}
+                    onChange={(e) =>
+                      updateItem(item.id, "unit", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="col-span-5">
+                  {index === 0 && <Label className="text-xs">單價</Label>}
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.unitPrice}
+                    onChange={(e) =>
+                      updateItem(
+                        item.id,
+                        "unitPrice",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(item.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    ✕
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

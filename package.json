@@ -8,7 +8,7 @@
     "dev:server": "node --watch server/index.ts",
     "build": "tsc -b && tsc -p server && vite build",
     "start": "node server/index.ts",
-    "test": "node --test server/*.test.ts",
+    "test": "node --test server/*.test.ts src/lib/*.test.ts",
     "preview": "vite preview",
     "lint": "eslint"
   },

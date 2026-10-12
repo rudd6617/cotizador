@@ -1,5 +1,7 @@
 import { DatabaseSync } from "node:sqlite"
 import type {
+  AppSettings,
+  LineItem,
   ClientInfo,
   CompanyInfo,
   ClientWithCount,
@@ -36,6 +38,11 @@ CREATE TABLE IF NOT EXISTS company (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   data TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data TEXT NOT NULL
+);
 `
 
 export function openDb(path: string): DatabaseSync {
@@ -55,6 +62,19 @@ export function getCompany(db: DatabaseSync): CompanyInfo | undefined {
 export function saveCompany(db: DatabaseSync, c: CompanyInfo): void {
   db.prepare(`INSERT INTO company (id, data) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`).run(
     JSON.stringify(c),
+  )
+}
+
+// ---- settings（只有一筆） ----
+
+export function getSettings(db: DatabaseSync): AppSettings | undefined {
+  const row = db.prepare(`SELECT data FROM settings WHERE id = 1`).get() as { data: string } | undefined
+  return row && JSON.parse(row.data)
+}
+
+export function saveSettings(db: DatabaseSync, s: AppSettings): void {
+  db.prepare(`INSERT INTO settings (id, data) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`).run(
+    JSON.stringify(s),
   )
 }
 
@@ -127,12 +147,20 @@ export function listQuotations(
     .all(like, like, filter.status, filter.status) as unknown as QuotationSummary[]
 }
 
+/** 舊格式品項只有 description；轉成品名，規格留空 */
+function upgradeItem({ description, ...item }: LineItem & { description?: string }): LineItem {
+  return description === undefined ? item : { ...item, name: description, spec: "" }
+}
+
 export function getQuotation(db: DatabaseSync, number: string): QuotationRecord | undefined {
   const row = db
     .prepare(`SELECT status, client_id AS clientId, data FROM quotations WHERE number = ?`)
     .get(number) as { status: QuotationStatus; clientId: number; data: string } | undefined
   if (!row) return undefined
-  return { status: row.status, clientId: row.clientId, data: JSON.parse(row.data) }
+  // 版型功能之前存的單沒有 template，一律視為 modern
+  const parsed = JSON.parse(row.data)
+  const data = { template: "modern", ...parsed, items: parsed.items.map(upgradeItem) }
+  return { status: row.status, clientId: row.clientId, data }
 }
 
 /** 編號重複時 SQLite 會拋 UNIQUE 錯誤，交給呼叫端回報 */

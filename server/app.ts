@@ -3,11 +3,15 @@ import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
 import {
   QUOTATION_STATUSES,
+  QUOTATION_TEMPLATES,
+  type AppSettings,
   type ClientInfo,
   type CompanyInfo,
   type QuotationRecord,
   type QuotationStatus,
+  type QuotationTemplate,
 } from "../src/types/quotation.ts"
+import { isQuotationNumber } from "../src/lib/format.ts"
 import * as store from "./db.ts"
 
 interface Deps {
@@ -16,15 +20,7 @@ interface Deps {
 }
 
 const EMPTY_COMPANY: CompanyInfo = { name: "", quoter: "", phone: "", email: "", address: "", taxId: "" }
-
-const pad = (n: number) => String(n).padStart(2, "0")
-
-/** QT-YYYYMMDD-HHmmss，用伺服器本地時間 */
-export function formatQuotationNumber(d: Date): string {
-  const date = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
-  const time = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
-  return `QT-${date}-${time}`
-}
+const DEFAULT_SETTINGS: AppSettings = { defaultTemplate: "modern" }
 
 function fail(status: 400 | 404 | 409, message: string): never {
   throw new HTTPException(status, { message })
@@ -34,11 +30,21 @@ function isStatus(s: unknown): s is QuotationStatus {
   return QUOTATION_STATUSES.includes(s as QuotationStatus)
 }
 
+function isTemplate(t: unknown): t is QuotationTemplate {
+  return QUOTATION_TEMPLATES.includes(t as QuotationTemplate)
+}
+
 function parseRecord(body: QuotationRecord): QuotationRecord {
   if (!isStatus(body.status)) fail(400, "狀態不正確")
   if (!Number.isInteger(body.clientId)) fail(400, "請選擇客戶")
   if (!body.data?.meta || !Array.isArray(body.data.items)) fail(400, "報價單內容不完整")
+  if (!isTemplate(body.data.template)) fail(400, "版型不正確")
   return body
+}
+
+function parseSettings(body: AppSettings): AppSettings {
+  if (!isTemplate(body.defaultTemplate)) fail(400, "版型不正確")
+  return { defaultTemplate: body.defaultTemplate }
 }
 
 function parseClient(body: ClientInfo): ClientInfo {
@@ -74,6 +80,14 @@ export function createApp({ db, now }: Deps) {
     const company = parseCompany(await c.req.json())
     store.saveCompany(db, company)
     return c.json(company)
+  })
+
+  app.get("/settings", (c) => c.json(store.getSettings(db) ?? DEFAULT_SETTINGS))
+
+  app.put("/settings", async (c) => {
+    const settings = parseSettings(await c.req.json())
+    store.saveSettings(db, settings)
+    return c.json(settings)
   })
 
   // ---- clients ----
@@ -115,14 +129,14 @@ export function createApp({ db, now }: Deps) {
     return c.json(record)
   })
 
+  // 編號在開單當下由前端產生（formatQuotationNumber），這裡只檢查格式與重複
   app.post("/quotations", async (c) => {
     const record = parseRecord(await c.req.json())
-    const at = now()
-    const number = formatQuotationNumber(at)
-    if (store.getQuotation(db, number)) fail(409, `報價編號 ${number} 已存在，請稍後再存一次`)
-    const saved = { ...record, data: { ...record.data, meta: { ...record.data.meta, quotationNumber: number } } }
-    store.insertQuotation(db, number, saved, at.toISOString())
-    return c.json(saved, 201)
+    const number = record.data.meta.quotationNumber
+    if (!isQuotationNumber(number)) fail(400, "報價編號格式不正確")
+    if (store.getQuotation(db, number)) fail(409, `報價編號 ${number} 已存在，請重新開一張報價單`)
+    store.insertQuotation(db, number, record, now().toISOString())
+    return c.json(record, 201)
   })
 
   app.put("/quotations/:number", async (c) => {
