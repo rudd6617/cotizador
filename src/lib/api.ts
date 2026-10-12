@@ -23,6 +23,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   getCompany: () => request<CompanyInfo>("GET", "/company"),
+  updateCompany: (c: CompanyInfo) => request<CompanyInfo>("PUT", "/company", c),
 
   listClients: () => request<ClientWithCount[]>("GET", "/clients"),
   createClient: (c: ClientInfo) => request<Client>("POST", "/clients", c),

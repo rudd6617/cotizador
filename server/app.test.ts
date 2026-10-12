@@ -4,12 +4,12 @@ import type { ClientInfo, Quotation, QuotationRecord } from "../src/types/quotat
 import { createApp, formatQuotationNumber } from "./app.ts"
 import { openDb } from "./db.ts"
 
-const COMPANY = { name: "測試公司", quoter: "王小明", phone: "02-1234", email: "a@b.c" }
+const COMPANY = { name: "測試公司", quoter: "王小明", phone: "02-1234", email: "a@b.c", address: "台北市", taxId: "12345678" }
 const CLIENT: ClientInfo = { company: "客戶甲", address: "台北市一路 1 號" }
 
 function setup(now = new Date(2026, 9, 12, 14, 30, 52)) {
   let current = now
-  const app = createApp({ db: openDb(":memory:"), company: COMPANY, now: () => current })
+  const app = createApp({ db: openDb(":memory:"), now: () => current })
   const call = (method: string, path: string, body?: unknown) =>
     app.request(`/api${path}`, {
       method,
@@ -128,5 +128,34 @@ test("列表可依關鍵字與狀態篩選，並算出含稅總計", async () =>
 test("沒選客戶不能存", async () => {
   const { call } = setup()
   const res = await call("POST", "/quotations", { ...record(1), clientId: undefined })
+  assert.equal(res.status, 400)
+})
+
+test("公司資料尚未設定時回傳空白資料", async () => {
+  const { call } = setup()
+  const company = await (await call("GET", "/company")).json()
+  assert.deepEqual(company, { name: "", quoter: "", phone: "", email: "", address: "", taxId: "" })
+})
+
+test("公司資料存了再讀要一致", async () => {
+  const { call } = setup()
+  const res = await call("PUT", "/company", COMPANY)
+  assert.equal(res.status, 200)
+  assert.deepEqual(await (await call("GET", "/company")).json(), COMPANY)
+})
+
+test("修改公司資料不影響已存報價單的公司快照", async () => {
+  const { call } = setup()
+  const clientId = await createClient(call)
+  await call("POST", "/quotations", record(clientId))
+  await call("PUT", "/company", { ...COMPANY, name: "新公司名" })
+
+  const saved = (await (await call("GET", "/quotations/QT-20261012-143052")).json()) as QuotationRecord
+  assert.equal(saved.data.company.name, "測試公司")
+})
+
+test("公司資料缺必要欄位時拒收", async () => {
+  const { call } = setup()
+  const res = await call("PUT", "/company", { name: "測試公司" })
   assert.equal(res.status, 400)
 })

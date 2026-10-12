@@ -40,7 +40,7 @@
 | 建置 | `npm run build` (前端 + server 型別檢查 + vite build) |
 | 正式執行 | `npm run build && npm start`（Hono 同時提供 API 與 `dist/`） |
 
-資料存在 `data/cotizador.db`（SQLite，不進 git；備份＝複製檔案）。公司資訊在 `company.json`。
+資料（含公司資訊）都存在 `data/cotizador.db`（SQLite，不進 git；備份＝複製檔案）。公司資訊在系統的「設定」頁修改。
 
 ### 驗證分級
 
@@ -90,7 +90,7 @@ _Avoid_: Customer, Buyer, Account
 儲存 Quotation 時一併複製進該單的 Client 資料。之後 Client 資料變動，不影響已存的 Quotation（見 ADR-0001）。
 
 **Company Profile**（公司資訊）：
-本公司自己的名稱、統編、地址、電話、Email、logo 與預設報價人，寫在一份設定裡，顯示在每頁頂端與 PDF 抬頭。
+本公司自己的名稱、統編、地址、電話、Email、logo 與預設報價人，存在資料庫、由「設定」頁維護，顯示在每頁頂端與 PDF 抬頭。新增報價單時複製一份進該單（與 Client Snapshot 同理）。
 _Avoid_: CompanyInfo（舊代碼名，每張單手填的版本）
 
 ### Bounded Contexts

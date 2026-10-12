@@ -1,6 +1,7 @@
 import { DatabaseSync } from "node:sqlite"
 import type {
   ClientInfo,
+  CompanyInfo,
   ClientWithCount,
   QuotationRecord,
   QuotationStatus,
@@ -30,6 +31,11 @@ CREATE TABLE IF NOT EXISTS quotations (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS company (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data TEXT NOT NULL
+);
 `
 
 export function openDb(path: string): DatabaseSync {
@@ -37,6 +43,19 @@ export function openDb(path: string): DatabaseSync {
   db.exec("PRAGMA foreign_keys = ON")
   db.exec(SCHEMA)
   return db
+}
+
+// ---- company（只有一筆） ----
+
+export function getCompany(db: DatabaseSync): CompanyInfo | undefined {
+  const row = db.prepare(`SELECT data FROM company WHERE id = 1`).get() as { data: string } | undefined
+  return row && JSON.parse(row.data)
+}
+
+export function saveCompany(db: DatabaseSync, c: CompanyInfo): void {
+  db.prepare(`INSERT INTO company (id, data) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`).run(
+    JSON.stringify(c),
+  )
 }
 
 // ---- clients ----

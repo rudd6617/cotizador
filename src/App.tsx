@@ -3,16 +3,25 @@ import { CompanyHeader } from "@/components/company-header"
 import { api } from "@/lib/api"
 import { useRoute, type Route } from "@/lib/route"
 import { ClientList } from "@/pages/client-list"
+import { Settings } from "@/pages/settings"
 import { QuotationEditor } from "@/pages/quotation-editor"
 import { QuotationList } from "@/pages/quotation-list"
 import type { CompanyInfo } from "@/types/quotation"
 
-function Page({ route, company }: { route: Route; company: CompanyInfo }) {
+interface PageProps {
+  route: Route
+  company: CompanyInfo
+  onCompanySaved: (c: CompanyInfo) => void
+}
+
+function Page({ route, company, onCompanySaved }: PageProps) {
   switch (route.page) {
     case "quotations":
       return <QuotationList />
     case "clients":
       return <ClientList />
+    case "settings":
+      return <Settings company={company} onSaved={onCompanySaved} />
     case "editor":
       return (
         <QuotationEditor
@@ -37,8 +46,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <CompanyHeader company={company} active={route.page === "clients" ? "clients" : "quotations"} />
-      <Page route={route} company={company} />
+      <CompanyHeader company={company} active={route.page === "editor" ? "quotations" : route.page} />
+      <Page route={route} company={company} onCompanySaved={setCompany} />
     </div>
   )
 }

@@ -12,9 +12,10 @@ import * as store from "./db.ts"
 
 interface Deps {
   db: DatabaseSync
-  company: CompanyInfo
   now: () => Date
 }
+
+const EMPTY_COMPANY: CompanyInfo = { name: "", quoter: "", phone: "", email: "", address: "", taxId: "" }
 
 const pad = (n: number) => String(n).padStart(2, "0")
 
@@ -46,13 +47,19 @@ function parseClient(body: ClientInfo): ClientInfo {
   return body
 }
 
+function parseCompany(body: CompanyInfo): CompanyInfo {
+  const required = [body.name, body.quoter, body.phone, body.email, body.address, body.taxId]
+  if (required.some((v) => typeof v !== "string")) fail(400, "公司資料不完整")
+  return body
+}
+
 function parseId(raw: string): number {
   const id = Number(raw)
   if (!Number.isInteger(id)) fail(400, "客戶編號不正確")
   return id
 }
 
-export function createApp({ db, company, now }: Deps) {
+export function createApp({ db, now }: Deps) {
   const app = new Hono().basePath("/api")
 
   app.onError((err, c) => {
@@ -61,7 +68,13 @@ export function createApp({ db, company, now }: Deps) {
     return c.json({ error: err.message }, 500)
   })
 
-  app.get("/company", (c) => c.json(company))
+  app.get("/company", (c) => c.json(store.getCompany(db) ?? EMPTY_COMPANY))
+
+  app.put("/company", async (c) => {
+    const company = parseCompany(await c.req.json())
+    store.saveCompany(db, company)
+    return c.json(company)
+  })
 
   // ---- clients ----
 

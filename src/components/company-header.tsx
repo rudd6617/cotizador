@@ -4,12 +4,13 @@ import type { CompanyInfo } from "@/types/quotation"
 
 interface Props {
   company: CompanyInfo
-  active: "quotations" | "clients"
+  active: "quotations" | "clients" | "settings"
 }
 
 const NAV = [
   { key: "quotations", label: "報價單", to: href.quotations() },
   { key: "clients", label: "客戶", to: href.clients() },
+  { key: "settings", label: "設定", to: href.settings() },
 ] as const
 
 export function CompanyHeader({ company, active }: Props) {
@@ -22,7 +23,9 @@ export function CompanyHeader({ company, active }: Props) {
       <div className="flex items-center gap-4">
         {company.logo && <img src={company.logo} alt="" className="h-12 w-12 rounded bg-white object-contain p-1" />}
         <div>
-          <div className="text-xl font-bold tracking-wide">{company.name}</div>
+          <div className="text-xl font-bold tracking-wide">
+            {company.name || <a href={href.settings()} className="underline">請到「設定」填寫公司資料</a>}
+          </div>
           <div className="mt-1 text-sm text-slate-300">{details}</div>
         </div>
       </div>
