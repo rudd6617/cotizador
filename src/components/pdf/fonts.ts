@@ -1,4 +1,5 @@
 import { Font } from "@react-pdf/renderer"
+import { lineBreakSegments } from "@/lib/line-break"
 
 // 字型檔不進 git，下載方式見 .claude/Wiki.md 的 Commands 段
 Font.register({
@@ -9,4 +10,4 @@ Font.register({
   ],
 })
 
-Font.registerHyphenationCallback((word) => [word])
+Font.registerHyphenationCallback(lineBreakSegments)
