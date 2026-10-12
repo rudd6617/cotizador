@@ -1,0 +1,9 @@
+{
+  "name": "[公司名稱]",
+  "quoter": "[預設報價人]",
+  "taxId": "[統一編號]",
+  "address": "[公司地址]",
+  "phone": "[電話]",
+  "email": "[Email]",
+  "logoFile": ""
+}

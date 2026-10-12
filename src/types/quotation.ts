@@ -41,3 +41,31 @@ export interface Quotation {
   paymentTerms: string
   notes: string
 }
+export const QUOTATION_STATUSES = ["draft", "sent", "won", "lost"] as const
+
+export type QuotationStatus = (typeof QUOTATION_STATUSES)[number]
+
+export interface Client extends ClientInfo {
+  id: number
+}
+
+export interface ClientWithCount extends Client {
+  quotationCount: number
+}
+
+/** 存進資料庫的一張報價單；data 內含客戶與公司快照（ADR-0001） */
+export interface QuotationRecord {
+  status: QuotationStatus
+  clientId: number
+  data: Quotation
+}
+
+export interface QuotationSummary {
+  number: string
+  clientId: number
+  clientName: string
+  status: QuotationStatus
+  date: string
+  currency: Currency
+  total: number
+}

@@ -16,17 +16,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import type { Quotation, CompanyInfo, ClientInfo, QuotationMeta, LineItem, Currency } from "@/types/quotation"
+import type { Quotation, Client, ClientInfo, QuotationMeta, LineItem, Currency } from "@/types/quotation"
 
 interface Props {
   value: Quotation
   onChange: (q: Quotation) => void
+  clients: Client[]
+  clientId: number | null
+  /** 選客戶時把客戶資料複製進報價單（客戶快照，ADR-0001） */
+  onSelectClient: (client: Client) => void
 }
 
-export function QuotationForm({ value, onChange }: Props) {
-  function updateCompany(field: keyof CompanyInfo, val: string) {
-    onChange({ ...value, company: { ...value.company, [field]: val } })
-  }
+export function QuotationForm({ value, onChange, clients, clientId, onSelectClient }: Props) {
+  const clientItems = clients.map((c) => ({ value: String(c.id), label: c.company }))
 
   function updateClient(field: keyof ClientInfo, val: string) {
     onChange({ ...value, client: { ...value.client, [field]: val } })
@@ -64,29 +66,13 @@ export function QuotationForm({ value, onChange }: Props) {
     })
   }
 
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 512 * 1024) {
-      alert("Logo 檔案不可超過 512 KB")
-      e.target.value = ""
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = () => updateCompany("logo", reader.result as string)
-    reader.readAsDataURL(file)
-  }
-
   return (
     <div className="space-y-6">
       {/* Quotation Number & Date */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>報價編號</Label>
-          <Input
-            value={value.meta.quotationNumber}
-            onChange={(e) => updateMeta("quotationNumber", e.target.value)}
-          />
+          <Input value={value.meta.quotationNumber} placeholder="儲存後自動產生" readOnly disabled />
         </div>
         <div className="space-y-1">
           <Label>報價日期</Label>
@@ -98,77 +84,37 @@ export function QuotationForm({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* Contact Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>聯絡資訊</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>公司名稱</Label>
-              <Input
-                value={value.company.name ?? ""}
-                onChange={(e) => updateCompany("name", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>聯絡人</Label>
-              <Input
-                value={value.company.quoter}
-                onChange={(e) => updateCompany("quoter", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>聯絡電話</Label>
-              <Input
-                value={value.company.phone}
-                onChange={(e) => updateCompany("phone", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>聯絡信箱</Label>
-              <Input
-                value={value.company.email}
-                onChange={(e) => updateCompany("email", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Logo</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>統一編號</Label>
-              <Input
-                value={value.company.taxId ?? ""}
-                onChange={(e) => updateCompany("taxId", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label>地址</Label>
-            <Input
-              value={value.company.address ?? ""}
-              onChange={(e) => updateCompany("address", e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Client */}
       <Card>
         <CardHeader>
           <CardTitle>客戶</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label>選擇客戶</Label>
+            <Select
+              items={clientItems}
+              value={clientId === null ? null : String(clientId)}
+              onValueChange={(val) => {
+                const client = clients.find((c) => String(c.id) === val)
+                if (client) onSelectClient(client)
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={clients.length ? "請選擇" : "尚無客戶，請先到「客戶」新增"} />
+              </SelectTrigger>
+              <SelectContent>
+                {clientItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              下方欄位是這張報價單自己的副本，修改不會影響客戶資料。
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>客戶名稱</Label>

@@ -33,12 +33,14 @@
 
 | 用途 | 指令 |
 |------|------|
-| 開發 | `npm run dev` |
-| 測試 |  |
-| 型別檢查 | `tsc --noEmit` |
+| 開發 | `npm run dev`（Hono API :8787 + Vite，`/api` 由 Vite proxy 轉送） |
+| 測試 | `npm test`（`node:test`，測 `server/`） |
+| 型別檢查 | `tsc -b && tsc -p server` |
 | Lint | `npm run lint` |
-| 建置 | `npm run build` (tsc + vite build) |
-| 預覽 | `npm run preview` |
+| 建置 | `npm run build` (前端 + server 型別檢查 + vite build) |
+| 正式執行 | `npm run build && npm start`（Hono 同時提供 API 與 `dist/`） |
+
+資料存在 `data/cotizador.db`（SQLite，不進 git；備份＝複製檔案）。公司資訊在 `company.json`。
 
 ### 驗證分級
 
