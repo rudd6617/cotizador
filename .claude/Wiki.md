@@ -68,6 +68,29 @@
 - 關聯：與哪些 term 相關
 -->
 
+**Quotation**（報價單）：
+公司對某位 Client 開出的一份報價，含品項、稅率、付款條件與備註。
+_Avoid_: Quote, Estimate, Offer
+
+**Quotation Number**（報價編號）：
+Quotation 第一次儲存時由後端依時間產生的唯一編號，格式 `QT-YYYYMMDD-HHmmss`，之後不可修改。
+_Avoid_: 單號, ID
+
+**Quotation Status**（狀態）：
+Quotation 所處的階段，只有四種：草稿（Draft）、已送出（Sent）、成交（Won）、未成交（Lost）。任何狀態都可直接修改；只有草稿可刪除。
+_Avoid_: Stage, State
+
+**Client**（客戶）：
+接收 Quotation 的公司，存於客戶資料。已有 Quotation 的 Client 不可刪除。
+_Avoid_: Customer, Buyer, Account
+
+**Client Snapshot**（客戶快照）：
+儲存 Quotation 時一併複製進該單的 Client 資料。之後 Client 資料變動，不影響已存的 Quotation（見 ADR-0001）。
+
+**Company Profile**（公司資訊）：
+本公司自己的名稱、統編、地址、電話、Email、logo 與預設報價人，寫在一份設定裡，顯示在每頁頂端與 PDF 抬頭。
+_Avoid_: CompanyInfo（舊代碼名，每張單手填的版本）
+
 ### Bounded Contexts
 
 <!-- 若專案大到有多個 context，於此列出並指向各 context 的位置。單 context 專案可留空。 -->
