@@ -1,42 +1,39 @@
-Code Review & Development Principles
+@../AGENTS.md
 
-## Language
-- Think in English, respond in Traditional Chinese (繁體中文)
-- Be direct and concise — no filler, no sugarcoating
+<!--
+家規（原則、模式、流程、Git 慣例）在上面那行 import 的 `AGENTS.md`——工具無關，任何 agent 都讀。
+本檔只放 Claude Code 專屬的東西：skill 路由、hook 機制。規則本體不寫這裡，寫 AGENTS.md。
+本檔是模板管理檔，隨 sync.sh 進各專案（見 docs/MAINTENANCE.md §0）。
+-->
 
-## Core Philosophy
+# Claude Code 專屬設定
 
-1. **Data structures first** — "Bad programmers worry about the code. Good programmers worry about data structures." 先搞清楚數據結構和流向，再寫邏輯。
-2. **Eliminate special cases** — 如果需要 if/else 來處理邊界情況，優先考慮重新設計數據結構來消除分支，而不是堆條件判斷。
-3. **Max 3 levels of indentation** — 超過就拆分。函數只做一件事。
-4. **Never break existing behavior** — 任何改動都不能破壞現有功能。改之前先列出影響範圍。
-5. **Solve real problems** — 不解決假想的威脅。方案的複雜度必須匹配問題的嚴重性。
-6. **Early return, fail fast** — 錯誤應該立刻暴露，不靜默吞掉。不做防禦性編程，不在內部函數裡用 try-catch 包一切。
-7. **命名表達意圖** — 命名要表達「做什麼」，不要表達「怎麼做」。
-8. **依賴保守** — 能用標準庫解決的不引入第三方。引入新依賴前須說明理由。
+## Skill 分工
 
-## Workflow
+| Skill | 時機 | 用法 |
+|---|---|---|
+| `/r-grill` | 需求模糊、動工前 | 一輪問完可答的 frontier，逐輪收斂；解析出術語 / 觸發三條件時順帶維護 Wiki/ADR |
+| `/r-plan` | 需求已對齊 + 涉及架構選擇 | 收斂為四段方案 |
+| `/r-review` | 完工後 / 讀不熟代碼 | 4 段品質評估 |
+| `/r-multi-review` | 定稿前、怕幻覺/漏需求 | 多模型接地＋對抗審，分歧交你裁決 |
+| `/r-design` | 建構 / 審查前端 UI | 設計 anti-pattern 清單，避免 AI 味 |
+| `/r-deepen` | codebase 級架構回顧 | 找深化機會 |
+| `/r-handoff` | 長對話收尾 / context 壓縮前 | 壓成交接、更新 `.claude/Memory.md` |
+| `/r-eli5` | 要把某個東西解釋給外行 / 主管 / 同事 | 大圖極少字的 HTML artifact，一次性不留檔 |
 
-IMPORTANT: 所有程式碼變更必須經過我確認後才可以執行。提出方案 → 等待確認 → 再動手。
+典型流程（Workflow 六步的 skill 路由；步驟本體見 `AGENTS.md`）：
+- 簡單（單檔、無架構選擇）：直接做
+- 中等（2–3 檔、無架構取捨）：`/r-grill` → 動工 → `/r-review`
+- 複雜（≥4 檔 或 有架構取捨 或 不可逆）：`/r-grill` → `/r-plan` → 動工 → `/r-review`
+- 出 bug：先寫重現測試再修（`AGENTS.md` 原則 6）
+- 中後期回顧：`/r-deepen`
+- 對話收尾：`/r-handoff`
 
-1. **理解需求** — 用一句話重述我的需求，確認理解正確
-2. **調查** — 讀相關檔案，了解現有架構，use subagents for complex investigation
-3. **規劃** — 提出最簡方案。如果有更簡單的做法，選簡單的。涉及架構或多檔案變更時，用 `/plan` 產出摘要
-4. **實作** — 寫最笨但最清晰的代碼。避免過度抽象和過度設計
-5. **驗證** — 跑測試、typecheck、lint。確保零破壞性
-6. **提交** — 等我確認後再 commit
+## 派工其他 agent
 
-## Code Review Standards
-
-用 `/review` 執行標準化代碼審查。
-
-## Git Conventions
-- Commit message 用英文，簡潔明確
-- 一個 commit 做一件事
-
-## Project Context
-See [stack.md](stack.md) for tech stack details.
+非 Claude 的 agent 讀不到本檔，但讀得到 `AGENTS.md`。派工時在指令裡點名模式即可，例如「以 `AGENTS.md` 的審查員模式審 X」——`codex exec` / `codex review` 每次都會自動載入專案根的 `AGENTS.md`。
 
 ## Self-Improvement
-Lessons 會透過 SessionStart hook 自動注入，不需手動讀取。
-犯錯或被糾正時，將教訓寫入 `.claude/lessons/` 對應檔案。
+`.claude/Learning.md` 與 `.claude/Memory.md` 會透過 SessionStart hook 自動注入，不需手動讀取。
+被糾正時，將教訓寫入 `.claude/Learning.md`（一條一個 `##` 標題）。
+條目累積過量時，hook 會提醒收斂（合併重複、升級成 `AGENTS.md` 原則、刪過期條目；判準見 `docs/MAINTENANCE.md` §4）。
