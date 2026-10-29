@@ -26,10 +26,10 @@
 
 ### 主要依賴
 - PDF: `@react-pdf/renderer` — client-side via dynamic import + `pdf().toBlob()`
-- Font: Noto Sans TC (`public/fonts/NotoSansTC.ttf`)
+- Font: Noto Sans TC（`public/fonts/NotoSansTC-Regular.otf`、`NotoSansTC-Bold.otf`）
 - API: Hono（`server/app.ts`），跑在 Cloudflare Worker（入口 `server/worker.ts`）
 - DB: Cloudflare D1（binding `DB`），資料表結構在 `migrations/*.sql`
-- Deployment: Cloudflare Workers——同一個 Worker 提供 `/api/*` 與前端靜態檔（`wrangler.jsonc`）
+- Deployment: Cloudflare Workers——同一個 Worker 提供 `/api/*` 與前端靜態檔（`wrangler.jsonc`；選型理由見 ADR-0002）
 
 ### Commands
 
@@ -41,7 +41,8 @@
 | 型別檢查 | `tsc -b && tsc -p server` |
 | Lint | `npm run lint` |
 | 建置 | `npm run build` (前端 + server 型別檢查 + vite build) |
-| 部署 | `npm run deploy`（建置 → 套用遠端 D1 migration → `wrangler deploy`） |
+| 部署 | `npm run deploy`（建置 → 套用遠端 D1 migration → `wrangler deploy`）；只在 `git status` 乾淨時跑 |
+| 備份 | `npx wrangler d1 export cotizador --remote --output backup.sql` |
 
 PDF 字型（不進 git，第一次 clone 後要下載，否則 PDF 產生失敗 `Unknown font format`）：
 
@@ -56,22 +57,15 @@ done
 
 資料（含公司資訊）都存在 D1。公司資訊在系統的「設定」頁修改。改資料表結構＝在 `migrations/` 加新的編號 SQL 檔，不改舊檔。
 
-第一次部署（只做一次）：
+### 正式環境
 
-```bash
-npx wrangler login
-npx wrangler d1 create cotizador     # 把印出的 database_id 填進 wrangler.jsonc
-npm run deploy
-```
-
-搬移舊的本機 SQLite 資料（`data/cotizador.db`）到 D1——先跑過 migration（建表），再只匯入資料列：
-
-```bash
-sqlite3 data/cotizador.db .dump | grep -E '^INSERT INTO "?(clients|quotations|company|settings)"? ' > export.sql
-npx wrangler d1 execute cotizador --remote --file export.sql   # 本機 D1 改用 --local
-```
-
-系統沒有登入功能；部署後要用 Cloudflare Access 擋在前面，否則任何人都看得到資料。
+- 網址：https://cotizador.rudd6617.workers.dev
+- 部署方式：本機手動 `npm run deploy`，不接 GitHub CI（只有一人開發；字型不進 git，CI 要另外處理）
+- D1 資料庫：`cotizador`（APAC），`database_id` 在 `wrangler.jsonc`
+- 存取控制：系統本身沒有登入功能，由 Cloudflare Access（Zero Trust → Access → Applications）擋在前面，只允許指定 Email
+- `wrangler.jsonc` 的 `preview_urls: false` 不能拿掉：版本預覽網址（`<版本>-cotizador.rudd6617.workers.dev`）不受 Access 保護，開著會讓資料直接公開
+- 備份：D1 有 30 天時間回溯（Time Travel）；要留檔用上表的備份指令
+- 舊的本機 `data/cotizador.db` 已於 2026-10-29 匯入 D1，之後不再更新，不是備份
 
 ### 驗證分級
 

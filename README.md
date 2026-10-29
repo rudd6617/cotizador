@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cotizador — 報價單管理系統
 
-## Getting Started
+建立、管理報價單與客戶資料，並匯出 PDF。
 
-First, run the development server:
+- 前端：Vite + React（`src/`）
+- API：Hono，跑在 Cloudflare Worker（`server/`）
+- 資料：Cloudflare D1（`migrations/`）
+- 正式環境：https://cotizador.rudd6617.workers.dev（需通過 Cloudflare Access 登入）
+
+## 開始開發
 
 ```bash
+npm install
+# 下載 PDF 字型（不進 git）
+for w in Regular Bold; do
+  curl -L -o public/fonts/NotoSansTC-$w.otf \
+    https://github.com/notofonts/noto-cjk/raw/main/Sans/SubsetOTF/TC/NotoSansTC-$w.otf
+done
+npm run db:migrate:local   # 建本機 D1 資料表
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 常用指令
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 用途 | 指令 |
+|------|------|
+| 測試 | `npm test` |
+| 建置 | `npm run build` |
+| 部署 | `npm run deploy`（只在 `git status` 乾淨時跑） |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+完整說明（指令、部署、正式環境注意事項、術語）見 `.claude/Wiki.md`；架構決策見 `docs/adr/`。
