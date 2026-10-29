@@ -27,18 +27,21 @@
 ### 主要依賴
 - PDF: `@react-pdf/renderer` — client-side via dynamic import + `pdf().toBlob()`
 - Font: Noto Sans TC (`public/fonts/NotoSansTC.ttf`)
-- Deployment: Cloudflare Pages (static site)
+- API: Hono（`server/app.ts`），跑在 Cloudflare Worker（入口 `server/worker.ts`）
+- DB: Cloudflare D1（binding `DB`），資料表結構在 `migrations/*.sql`
+- Deployment: Cloudflare Workers——同一個 Worker 提供 `/api/*` 與前端靜態檔（`wrangler.jsonc`）
 
 ### Commands
 
 | 用途 | 指令 |
 |------|------|
-| 開發 | `npm run dev`（Hono API :8787 + Vite，`/api` 由 Vite proxy 轉送） |
-| 測試 | `npm test`（`node:test`，測 `server/` 與 `src/lib/`） |
+| 開發 | `npm run dev`（Vite + Cloudflare 外掛，本機跑 Worker 與本機 D1，資料在 `.wrangler/`） |
+| 本機建表 | `npm run db:migrate:local`（第一次開發前、或新增 migration 後） |
+| 測試 | `npm test`（`node:test`，測 `server/` 與 `src/lib/`；DB 用 `server/sqlite-d1.ts` 把 node:sqlite 包成 D1 介面） |
 | 型別檢查 | `tsc -b && tsc -p server` |
 | Lint | `npm run lint` |
 | 建置 | `npm run build` (前端 + server 型別檢查 + vite build) |
-| 正式執行 | `npm run build && npm start`（Hono 同時提供 API 與 `dist/`） |
+| 部署 | `npm run deploy`（建置 → 套用遠端 D1 migration → `wrangler deploy`） |
 
 PDF 字型（不進 git，第一次 clone 後要下載，否則 PDF 產生失敗 `Unknown font format`）：
 
@@ -51,7 +54,24 @@ done
 
 不要用 Google Fonts 的可變字重檔 `NotoSansTC[wght].ttf`：react-pdf 只取預設字重（Thin），粗體也出不來。
 
-資料（含公司資訊）都存在 `data/cotizador.db`（SQLite，不進 git；備份＝複製檔案）。公司資訊在系統的「設定」頁修改。
+資料（含公司資訊）都存在 D1。公司資訊在系統的「設定」頁修改。改資料表結構＝在 `migrations/` 加新的編號 SQL 檔，不改舊檔。
+
+第一次部署（只做一次）：
+
+```bash
+npx wrangler login
+npx wrangler d1 create cotizador     # 把印出的 database_id 填進 wrangler.jsonc
+npm run deploy
+```
+
+搬移舊的本機 SQLite 資料（`data/cotizador.db`）到 D1——先跑過 migration（建表），再只匯入資料列：
+
+```bash
+sqlite3 data/cotizador.db .dump | grep -E '^INSERT INTO "?(clients|quotations|company|settings)"? ' > export.sql
+npx wrangler d1 execute cotizador --remote --file export.sql   # 本機 D1 改用 --local
+```
+
+系統沒有登入功能；部署後要用 Cloudflare Access 擋在前面，否則任何人都看得到資料。
 
 ### 驗證分級
 

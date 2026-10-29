@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cotizador",
+  "main": "server/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cotizador",
+      "database_id": "ae966441-94b1-41aa-a129-f2bebe210bdf",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -36,3 +36,6 @@ yarn-error.log*
 
 # local database
 /data
+
+# wrangler local state (local D1)
+/.wrangler

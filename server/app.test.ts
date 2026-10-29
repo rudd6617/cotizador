@@ -3,8 +3,9 @@ import assert from "node:assert/strict"
 import type { ClientInfo, Quotation, QuotationRecord } from "../src/types/quotation.ts"
 import { formatQuotationNumber } from "../src/lib/format.ts"
 import { createApp } from "./app.ts"
-import { DatabaseSync } from "node:sqlite"
-import { insertClient, insertQuotation, listClients, migrate, openDb } from "./db.ts"
+import type { D1Database } from "@cloudflare/workers-types"
+import { insertQuotation } from "./db.ts"
+import { openTestDb } from "./sqlite-d1.ts"
 
 const COMPANY = {
   name: "測試公司",
@@ -21,7 +22,7 @@ const COMPANY = {
 const CLIENT: ClientInfo = { company: "客戶甲", taxId: "87654321", address: "台北市一路 1 號" }
 
 function setup() {
-  const db = openDb(":memory:")
+  const db = openTestDb()
   const app = createApp({ db, now: () => new Date(2026, 9, 12, 14, 30, 52) })
   const call = (method: string, path: string, body?: unknown) =>
     app.request(`/api${path}`, {
@@ -197,7 +198,7 @@ test("舊報價單沒有版型欄位時，讀出為 modern", async () => {
   const clientId = await createClient(call)
   const legacy: Partial<Quotation> = quotationData(CLIENT)
   delete legacy.template
-  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+  await insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
 
   const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
   assert.equal(saved.data.template, "modern")
@@ -221,25 +222,25 @@ test("舊報價單的品項說明讀出為品名，規格留空", async () => {
   const legacy = quotationData(CLIENT)
   const legacyItems = [{ id: "1", description: "舊說明", quantity: 1, unit: "式", unitPrice: 100 }]
   const data = { ...legacy, items: legacyItems } as unknown as Quotation
-  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data }, "2026-01-01T00:00:00Z")
+  await insertQuotation(db, "QT-OLD", { status: "sent", clientId, data }, "2026-01-01T00:00:00Z")
 
   const saved = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
   assert.deepEqual(saved.data.items, [{ id: "1", name: "舊說明", spec: "", quantity: 1, unit: "式", unitPrice: 100 }])
 })
 
 /** 寫入舊格式的報價單：拿掉兩個分開的開關，必要時放回舊的共用開關 */
-function insertLegacyToggles(db: DatabaseSync, clientId: number, number: string, combined?: boolean) {
+async function insertLegacyToggles(db: D1Database, clientId: number, number: string, combined?: boolean) {
   const rest: Partial<Quotation> = quotationData(CLIENT)
   delete rest.showPaymentTerms
   delete rest.showNotes
   const data = combined === undefined ? rest : { ...rest, showTermsAndNotes: combined }
-  insertQuotation(db, number, { status: "sent", clientId, data: data as unknown as Quotation }, "2026-01-01T00:00:00Z")
+  await insertQuotation(db, number, { status: "sent", clientId, data: data as unknown as Quotation }, "2026-01-01T00:00:00Z")
 }
 
 test("舊報價單沒有任何顯示開關時，付款條件與備註都顯示", async () => {
   const { call, db } = setup()
   const clientId = await createClient(call)
-  insertLegacyToggles(db, clientId, "QT-OLD")
+  await insertLegacyToggles(db, clientId, "QT-OLD")
 
   const { data } = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
   assert.deepEqual([data.showPaymentTerms, data.showNotes], [true, true])
@@ -248,7 +249,7 @@ test("舊報價單沒有任何顯示開關時，付款條件與備註都顯示",
 test("舊報價單的共用開關拆成兩個開關，沿用原本的值", async () => {
   const { call, db } = setup()
   const clientId = await createClient(call)
-  insertLegacyToggles(db, clientId, "QT-OFF", false)
+  await insertLegacyToggles(db, clientId, "QT-OFF", false)
 
   const { data } = (await (await call("GET", "/quotations/QT-OFF")).json()) as QuotationRecord
   assert.deepEqual([data.showPaymentTerms, data.showNotes], [false, false])
@@ -272,30 +273,12 @@ test("客戶統編可存取", async () => {
   assert.equal(client.taxId, "87654321")
 })
 
-test("舊資料庫的客戶表沒有統編欄位時，開啟時自動補上，既有客戶保留", () => {
-  const db = new DatabaseSync(":memory:")
-  db.exec(`CREATE TABLE clients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT NOT NULL, contact_person TEXT,
-    address TEXT NOT NULL, phone TEXT, email TEXT)`)
-  db.exec(`INSERT INTO clients (company, address) VALUES ('舊客戶', '舊地址')`)
-
-  migrate(db)
-  migrate(db) // 重複執行不出錯
-  insertClient(db, { company: "新客戶", taxId: "12345678", address: "新地址" })
-
-  const clients = listClients(db)
-  assert.deepEqual(
-    clients.map((c) => [c.company, c.taxId]),
-    [["新客戶", "12345678"], ["舊客戶", null]],
-  )
-})
-
 test("舊報價單沒有大寫金額開關時，預設顯示", async () => {
   const { call, db } = setup()
   const clientId = await createClient(call)
   const legacy: Partial<Quotation> = quotationData(CLIENT)
   delete legacy.showAmountInWords
-  insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
+  await insertQuotation(db, "QT-OLD", { status: "sent", clientId, data: legacy as Quotation }, "2026-01-01T00:00:00Z")
 
   const { data } = (await (await call("GET", "/quotations/QT-OLD")).json()) as QuotationRecord
   assert.equal(data.showAmountInWords, true)

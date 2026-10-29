@@ -1,4 +1,4 @@
-import type { DatabaseSync } from "node:sqlite"
+import type { D1Database } from "@cloudflare/workers-types"
 import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
 import {
@@ -15,7 +15,7 @@ import { isQuotationNumber } from "../src/lib/format.ts"
 import * as store from "./db.ts"
 
 interface Deps {
-  db: DatabaseSync
+  db: D1Database
   now: () => Date
 }
 
@@ -77,57 +77,57 @@ export function createApp({ db, now }: Deps) {
     return c.json({ error: err.message }, 500)
   })
 
-  app.get("/company", (c) => c.json(store.getCompany(db) ?? EMPTY_COMPANY))
+  app.get("/company", async (c) => c.json((await store.getCompany(db)) ?? EMPTY_COMPANY))
 
   app.put("/company", async (c) => {
     const company = parseCompany(await c.req.json())
-    store.saveCompany(db, company)
+    await store.saveCompany(db, company)
     return c.json(company)
   })
 
-  app.get("/settings", (c) => c.json(store.getSettings(db) ?? DEFAULT_SETTINGS))
+  app.get("/settings", async (c) => c.json((await store.getSettings(db)) ?? DEFAULT_SETTINGS))
 
   app.put("/settings", async (c) => {
     const settings = parseSettings(await c.req.json())
-    store.saveSettings(db, settings)
+    await store.saveSettings(db, settings)
     return c.json(settings)
   })
 
   // ---- clients ----
 
-  app.get("/clients", (c) => c.json(store.listClients(db)))
+  app.get("/clients", async (c) => c.json(await store.listClients(db)))
 
   app.post("/clients", async (c) => {
     const client = parseClient(await c.req.json())
-    const id = store.insertClient(db, client)
+    const id = await store.insertClient(db, client)
     return c.json({ ...client, id }, 201)
   })
 
   app.put("/clients/:id", async (c) => {
     const id = parseId(c.req.param("id"))
     const client = parseClient(await c.req.json())
-    if (!store.updateClient(db, id, client)) fail(404, "找不到客戶")
+    if (!(await store.updateClient(db, id, client))) fail(404, "找不到客戶")
     return c.json({ ...client, id })
   })
 
-  app.delete("/clients/:id", (c) => {
+  app.delete("/clients/:id", async (c) => {
     const id = parseId(c.req.param("id"))
-    if (store.countClientQuotations(db, id) > 0) fail(409, "這個客戶已有報價單，不能刪除")
-    if (!store.deleteClient(db, id)) fail(404, "找不到客戶")
+    if ((await store.countClientQuotations(db, id)) > 0) fail(409, "這個客戶已有報價單，不能刪除")
+    if (!(await store.deleteClient(db, id))) fail(404, "找不到客戶")
     return c.body(null, 204)
   })
 
   // ---- quotations ----
 
-  app.get("/quotations", (c) => {
+  app.get("/quotations", async (c) => {
     const q = c.req.query("q") ?? ""
     const status = c.req.query("status") ?? ""
     if (status !== "" && !isStatus(status)) fail(400, "狀態不正確")
-    return c.json(store.listQuotations(db, { q, status }))
+    return c.json(await store.listQuotations(db, { q, status }))
   })
 
-  app.get("/quotations/:number", (c) => {
-    const record = store.getQuotation(db, c.req.param("number"))
+  app.get("/quotations/:number", async (c) => {
+    const record = await store.getQuotation(db, c.req.param("number"))
     if (!record) fail(404, "找不到報價單")
     return c.json(record)
   })
@@ -137,8 +137,8 @@ export function createApp({ db, now }: Deps) {
     const record = parseRecord(await c.req.json())
     const number = record.data.meta.quotationNumber
     if (!isQuotationNumber(number)) fail(400, "報價編號格式不正確")
-    if (store.getQuotation(db, number)) fail(409, `報價編號 ${number} 已存在，請重新開一張報價單`)
-    store.insertQuotation(db, number, record, now().toISOString())
+    if (await store.getQuotation(db, number)) fail(409, `報價編號 ${number} 已存在，請重新開一張報價單`)
+    await store.insertQuotation(db, number, record, now().toISOString())
     return c.json(record, 201)
   })
 
@@ -146,16 +146,16 @@ export function createApp({ db, now }: Deps) {
     const number = c.req.param("number")
     const record = parseRecord(await c.req.json())
     const saved = { ...record, data: { ...record.data, meta: { ...record.data.meta, quotationNumber: number } } }
-    if (!store.updateQuotation(db, number, saved, now().toISOString())) fail(404, "找不到報價單")
+    if (!(await store.updateQuotation(db, number, saved, now().toISOString()))) fail(404, "找不到報價單")
     return c.json(saved)
   })
 
-  app.delete("/quotations/:number", (c) => {
+  app.delete("/quotations/:number", async (c) => {
     const number = c.req.param("number")
-    const record = store.getQuotation(db, number)
+    const record = await store.getQuotation(db, number)
     if (!record) fail(404, "找不到報價單")
     if (record.status !== "draft") fail(409, "只有草稿可以刪除")
-    store.deleteQuotation(db, number)
+    await store.deleteQuotation(db, number)
     return c.body(null, 204)
   })
 
